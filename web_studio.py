@@ -198,32 +198,38 @@ def get_omniroute_models():
     """
     url = "http://localhost:20128/v1/models"
     user_combos = []
+    gemini_combos = []
     recommended_models = [
         {"id": "antigravity/gemini-3.5-flash-low", "name": "Gemini 3.5 Flash (Fast Recommended)", "type": "recommended"},
         {"id": "agy/gemini-3.1-pro-high", "name": "Gemini 3.1 Pro (High Quality)", "type": "recommended"},
+        {"id": "auto/claude/opus", "name": "Combo: auto/claude/opus", "type": "combo"},
+        {"id": "auto/claude", "name": "Combo: auto/claude", "type": "combo"},
     ]
 
     try:
         req = urllib.request.Request(url, headers={"Authorization": f"Bearer {OMNIROUTE_KEY}"})
-        with urllib.request.urlopen(req, timeout=2.0) as resp:
+        with urllib.request.urlopen(req, timeout=2.5) as resp:
             if resp.status == 200:
                 data = json.loads(resp.read().decode())
                 models = data.get("data", [])
                 for m in models:
                     m_id = m.get("id", "")
-                    if m_id.startswith("auto/") or m_id.startswith("my-") or "_" in m_id:
+                    if "gemini" in m_id.lower():
+                        gemini_combos.append({"id": m_id, "name": f"Gemini: {m_id}", "type": "gemini"})
+                    elif m_id.startswith("auto/") or m_id.startswith("my-") or "combo" in m_id.lower() or "/" in m_id:
                         user_combos.append({"id": m_id, "name": f"Combo: {m_id}", "type": "combo"})
-                    elif m_id not in [r["id"] for r in recommended_models]:
-                        if any(k in m_id for k in ("claude", "gpt-4", "deepseek", "llama", "mistral")):
-                            user_combos.append({"id": m_id, "name": m_id, "type": "model"})
+                    else:
+                        user_combos.append({"id": m_id, "name": m_id, "type": "model"})
     except Exception:
         pass
 
     return {
         "user_combos": user_combos,
+        "gemini_combos": gemini_combos,
         "recommended_models": recommended_models,
         "fallback_freebuff": {"id": "free", "name": "FreeBuff (100% Free Fallback)", "type": "free"},
     }
+
 
 
 @app.get("/api/omniroute_all_models")

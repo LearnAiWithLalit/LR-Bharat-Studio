@@ -83,19 +83,19 @@
   }
 
   /* Left Column: Interactive Chat & Controls */
-  .left-column{ display:flex; flex-direction:column; gap:20px; }
+  .left-column{ display:flex; flex-direction:column; gap:20px; max-width:100%; }
 
   .panel-input{
     background:var(--bg-card); border:1px solid var(--line);
     border-radius:16px; padding:20px; display:flex; flex-direction:column; gap:14px;
-    box-shadow:0 20px 50px rgba(0,0,0,0.5);
+    box-shadow:0 20px 50px rgba(0,0,0,0.5); max-width:100%; overflow:hidden;
   }
   .panel-title{ font-family:var(--display); font-size:16px; font-weight:600; display:flex; align-items:center; justify-content:space-between; }
 
   /* Interactive Chat Box Thread */
   .chat-thread-container{
     background:var(--bg); border:1px solid var(--line); border-radius:12px;
-    height:200px; padding:12px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;
+    height:190px; padding:12px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;
   }
   .chat-msg{ display:flex; flex-direction:column; gap:4px; max-width:92%; font-size:13px; line-height:1.45; }
   .chat-msg.user{ align-self:flex-end; }
@@ -154,15 +154,22 @@
     color:var(--orange-2); padding:3px 8px; border-radius:6px; font-size:11.5px;
   }
 
-  /* Control Form Fields */
-  .form-group{ display:flex; flex-direction:column; gap:5px; }
-  .form-label{ font-size:12.5px; color:var(--text-dim); font-weight:500; }
+  /* Control Form Fields & Layout Containment */
+  .form-group{ display:flex; flex-direction:column; gap:5px; width:100%; max-width:100%; min-width:0; }
+  .form-label{ font-size:12.5px; color:var(--text-dim); font-weight:500; display:flex; justify-content:space-between; align-items:center; }
+  .form-subnote{ font-size:11px; color:var(--text-faint); font-family:var(--mono); }
   select.form-select, input.form-input{
+    width:100%; max-width:100%; box-sizing:border-color;
     background:var(--bg); border:1px solid var(--line); border-radius:8px;
     padding:9px 11px; color:var(--text); font-family:var(--body); font-size:13px; outline:none;
+    text-overflow:ellipsis; overflow:hidden; white-space:nowrap;
   }
   select.form-select:focus, input.form-input:focus{ border-color:var(--orange); }
-  .form-row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .form-row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; max-width:100%; min-width:0; }
+  .form-row > .form-group{ min-width:0; }
+
+  /* Searchable Datalist Input Wrapper */
+  .combo-input-wrap{ position:relative; width:100%; max-width:100%; }
 
   /* Cast Selection Chips */
   .cast-chips{ display:flex; flex-wrap:wrap; gap:6px; }
@@ -176,7 +183,7 @@
   /* OmniRoute Helper Card */
   .omni-card{
     background:var(--bg-card-2); border:1px solid var(--line); border-radius:10px;
-    padding:10px 12px; font-family:var(--mono); font-size:11.5px; display:flex; justify-content:space-between; align-items:center;
+    padding:10px 12px; font-family:var(--mono); font-size:11.5px; display:flex; justify-content:space-between; align-items:center; width:100%; max-width:100%;
   }
   .omni-btn{
     background:var(--orange); color:#1a0d02; border:none; padding:4px 10px;
@@ -203,7 +210,7 @@
   .sys-box{
     background:var(--bg-card); border:1px solid var(--line);
     border-radius:16px; padding:18px; display:flex; flex-direction:column; gap:12px;
-    box-shadow:0 10px 30px rgba(0,0,0,0.4);
+    box-shadow:0 10px 30px rgba(0,0,0,0.4); max-width:100%;
   }
   .sys-title{ font-family:var(--display); font-size:14.5px; font-weight:600; display:flex; justify-content:space-between; align-items:center; }
   .sys-metric{ display:flex; flex-direction:column; gap:4px; font-family:var(--mono); font-size:11.5px; }
@@ -302,12 +309,12 @@
   video{ width:100%; max-height:460px; display:block; }
 
   /* Right Column: AI Models & Free API Combo Matrix Box */
-  .right-column{ display:flex; flex-direction:column; gap:18px; }
+  .right-column{ display:flex; flex-direction:column; gap:18px; max-width:100%; }
 
   .models-box{
     background:var(--bg-card); border:1px solid var(--line);
     border-radius:16px; padding:20px; display:flex; flex-direction:column; gap:12px;
-    box-shadow:0 20px 50px rgba(0,0,0,0.5);
+    box-shadow:0 20px 50px rgba(0,0,0,0.5); max-width:100%; overflow:hidden;
   }
   .models-header{ font-family:var(--display); font-size:15.5px; font-weight:600; display:flex; justify-content:space-between; align-items:center; }
   .cost-badge{ background:rgba(40,200,64,0.15); border:1px solid rgba(40,200,64,0.3); color:var(--green); padding:3px 8px; border-radius:6px; font-family:var(--mono); font-size:11px; font-weight:600; }
@@ -316,22 +323,22 @@
   .agent-model-card{
     background:var(--bg-card-2); border:1px solid var(--line); border-radius:10px;
     padding:10px 12px; display:flex; flex-direction:column; gap:4px; font-size:12px;
-    transition:border-color .2s;
+    transition:border-color .2s; max-width:100%; overflow:hidden;
   }
   .agent-model-card.active-running{
     border-color:var(--green); background:rgba(40,200,64,0.08);
   }
   .agent-model-title{ display:flex; justify-content:space-between; align-items:center; font-weight:600; color:var(--text); }
-  .agent-model-primary{ color:var(--orange-2); font-family:var(--mono); font-size:11.5px; }
-  .agent-model-fallback{ color:var(--green); font-family:var(--mono); font-size:11px; }
+  .agent-model-primary{ color:var(--orange-2); font-family:var(--mono); font-size:11.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .agent-model-fallback{ color:var(--green); font-family:var(--mono); font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
-  .free-combos-wrap{ display:flex; flex-direction:column; gap:8px; margin-top:4px; }
+  .free-combos-wrap{ display:flex; flex-direction:column; gap:8px; margin-top:4px; max-width:100%; }
   .combo-item{
     display:flex; justify-content:space-between; align-items:center;
     background:var(--bg); border:1px solid var(--line); padding:8px 10px;
-    border-radius:8px; font-family:var(--mono); font-size:11.5px;
+    border-radius:8px; font-family:var(--mono); font-size:11.5px; overflow:hidden;
   }
-  .badge-free{ background:rgba(40,200,64,0.15); color:var(--green); padding:2px 6px; border-radius:4px; font-size:10px; }
+  .badge-free{ background:rgba(40,200,64,0.15); color:var(--green); padding:2px 6px; border-radius:4px; font-size:10px; flex-shrink:0; }
 
   @media(max-width:1450px){
     .studio-container{ grid-template-columns:380px 1fr; }
@@ -347,6 +354,15 @@
 <body>
 
 <div class="glyph-bg" id="glyphBg"></div>
+
+<!-- Shared Datalist for Searchable Combo Inputs -->
+<datalist id="omniCombosDatalist">
+  <option value="auto/claude/opus">Combo: auto/claude/opus</option>
+  <option value="auto/claude">Combo: auto/claude</option>
+  <option value="antigravity/gemini-3.5-flash-low">Gemini 3.5 Flash Low</option>
+  <option value="agy/gemini-3.1-pro-high">Gemini 3.1 Pro High</option>
+  <option value="free">FreeBuff (100% Free Fallback)</option>
+</datalist>
 
 <!-- Header -->
 <header>
@@ -417,19 +433,37 @@
         </div>
       </div>
 
-      <!-- Controls -->
+      <!-- Language & Output Format Selectors -->
       <div class="form-row">
         <div class="form-group">
-          <div class="form-label">Language:</div>
+          <div class="form-label">Language (Chatterbox v3):</div>
           <select id="langSelect" class="form-select">
-            <option value="auto">Auto-detect</option>
-            <option value="Hindi" selected>Hindi</option>
-            <option value="English">English</option>
-            <option value="Both">Both (Hinglish)</option>
+            <optgroup label="⭐ Top Languages">
+              <option value="Hindi" selected>🇮🇳 Hindi (हिन्दी)</option>
+              <option value="English">🇬🇧 English</option>
+              <option value="Both">🇮🇳 Both (Hinglish)</option>
+            </optgroup>
+            <optgroup label="🇮🇳 Indic Languages (Chatterbox v3)">
+              <option value="Tamil">🇮🇳 Tamil (தமிழ்)</option>
+              <option value="Telugu">🇮🇳 Telugu (తెలుగు)</option>
+              <option value="Kannada">🇮🇳 Kannada (ಕನ್ನಡ)</option>
+              <option value="Malayalam">🇮🇳 Malayalam (മലയാളം)</option>
+              <option value="Marathi">🇮🇳 Marathi (मराठी)</option>
+              <option value="Gujarati">🇮🇳 Gujarati (ગુજરાતી)</option>
+              <option value="Bengali">🇮🇳 Bengali (বাংলা)</option>
+              <option value="Punjabi">🇮🇳 Punjabi (ਪੰਜਾਬੀ)</option>
+            </optgroup>
+            <optgroup label="🌍 Global Languages">
+              <option value="Spanish">🇪🇸 Spanish (Español)</option>
+              <option value="French">🇫🇷 French (Français)</option>
+              <option value="German">🇩🇪 German (Deutsch)</option>
+              <option value="Japanese">🇯🇵 Japanese (日本語)</option>
+              <option value="Mandarin">🇨🇳 Mandarin (中文)</option>
+            </optgroup>
           </select>
         </div>
         <div class="form-group">
-          <div class="form-label">Output Format:</div>
+          <div class="form-label">Output Aspect Ratio:</div>
           <select id="formatSelect" class="form-select">
             <option value="youtube_long_form" selected>YouTube Long (16:9 4K)</option>
             <option value="youtube_shorts">YouTube Shorts (9:16 4K)</option>
@@ -437,29 +471,29 @@
         </div>
       </div>
 
-      <!-- Phase-Specific Combo & Model Selectors -->
+      <!-- Searchable Chat Advisor Combo (Brainstorming Phase) -->
       <div class="form-group">
-        <div class="form-label">💬 Chat Advisor Combo (Brainstorming Phase):</div>
-        <select id="chatLlmSelect" class="form-select">
-          <option value="auto/claude/opus" selected>Combo: auto/claude/opus (Recommended)</option>
-          <option value="auto/claude">Combo: auto/claude</option>
-          <option value="antigravity/gemini-3.5-flash-low">Gemini 3.5 Flash</option>
-          <option value="agy/gemini-3.1-pro-high">Gemini 3.1 Pro</option>
-          <option value="free">FreeBuff (100% Free)</option>
-        </select>
+        <div class="form-label">
+          <span>💬 Chat Advisor Combo (Brainstorming):</span>
+          <span class="form-subnote">Search or Select</span>
+        </div>
+        <div class="combo-input-wrap">
+          <input type="text" id="chatComboInput" class="form-input" list="omniCombosDatalist" placeholder="Search or type combo (e.g. auto/claude/opus)..." value="auto/claude/opus">
+        </div>
       </div>
 
+      <!-- Searchable Pipeline Primary Combo (Agents 1-7 Task Execution) -->
       <div class="form-group">
-        <div class="form-label">🚀 Pipeline Primary Combo (Agents 1-7 Task Execution):</div>
-        <select id="llmSelect" class="form-select">
-          <option value="antigravity/gemini-3.5-flash-low" selected>Gemini Combo: 3.5 Flash (Fast)</option>
-          <option value="agy/gemini-3.1-pro-high">Gemini Combo: 3.1 Pro (High)</option>
-          <option value="auto/claude/opus">Combo: auto/claude/opus</option>
-          <option value="auto/claude">Combo: auto/claude</option>
-          <option value="free">FreeBuff (100% Free Fallback)</option>
-        </select>
+        <div class="form-label">
+          <span>🚀 Pipeline Primary Combo (Agents 1-7):</span>
+          <span class="form-subnote">Search or Select</span>
+        </div>
+        <div class="combo-input-wrap">
+          <input type="text" id="pipelineComboInput" class="form-input" list="omniCombosDatalist" placeholder="Search or type combo (e.g. Gemini combo or auto/claude)..." value="antigravity/gemini-3.5-flash-low">
+        </div>
       </div>
 
+      <!-- Fallback Combo & Flexible Custom Target Duration -->
       <div class="form-row">
         <div class="form-group">
           <div class="form-label">Fallback Combo / Model:</div>
@@ -470,20 +504,13 @@
           </select>
         </div>
         <div class="form-group">
-          <div class="form-label">Target Duration:</div>
-          <select id="durationSelect" class="form-select">
-            <option value="1">1 min (Short)</option>
-            <option value="3">3 minutes</option>
-            <option value="5" selected>5 minutes (Std)</option>
-            <option value="10">10 minutes</option>
-          </select>
+          <div class="form-label">Target Duration (~Mins):</div>
+          <input type="number" id="durationInput" class="form-input" min="1" max="120" value="5" step="1" placeholder="e.g. 1, 3, 5, 15, 60">
         </div>
       </div>
 
-      <!-- Custom Project Combo Input -->
-      <div class="form-group">
-        <div class="form-label">Custom Project Combo Name (Optional):</div>
-        <input type="text" id="customComboInput" class="form-input" placeholder="e.g. auto/claude/opus or my_combo">
+      <div style="font-size:11px; color:var(--text-faint); font-family:var(--mono); margin-top:-4px;">
+        💡 <i>Target duration is approximate (e.g. 5 min target = ~4 to 6 min flexible audio pacing).</i>
       </div>
 
       <!-- OmniRoute Config & 280+ Models Inspector Card -->
@@ -689,7 +716,7 @@
           <span><span class="led-dot" id="ledAg1"></span> Agent 1 · Topic Planner</span>
           <span style="color:var(--green)">$0</span>
         </div>
-        <div class="agent-model-primary" id="ag1ModelText">Primary: Gemini 3.5 Flash Low</div>
+        <div class="agent-model-primary" id="ag1ModelText">Primary: antigravity/gemini-3.5-flash-low</div>
         <div class="agent-model-fallback" id="ag1FallbackText">Fallback: auto/claude</div>
       </div>
 
@@ -699,7 +726,7 @@
           <span><span class="led-dot" id="ledAg2"></span> Agent 2 · Script Writer</span>
           <span style="color:var(--green)">$0</span>
         </div>
-        <div class="agent-model-primary" id="ag2ModelText">Primary: Gemini 3.5 Flash Low</div>
+        <div class="agent-model-primary" id="ag2ModelText">Primary: antigravity/gemini-3.5-flash-low</div>
         <div class="agent-model-fallback" id="ag2FallbackText">Fallback: auto/claude</div>
       </div>
 
@@ -796,7 +823,6 @@
 
   // LED Activation Helper for AI Models Matrix Box
   function setActiveLED(agentKey){
-    // Reset all LEDs & card highlights
     document.querySelectorAll('.led-dot').forEach(l => l.classList.remove('active'));
     document.querySelectorAll('.agent-model-card').forEach(c => c.classList.remove('active-running'));
 
@@ -816,10 +842,10 @@
   const promptInput = document.getElementById('promptInput');
   const btnChatSend = document.getElementById('btnChatSend');
   const btnLaunch = document.getElementById('btnLaunch');
-  const chatLlmSelect = document.getElementById('chatLlmSelect');
-  const llmSelect = document.getElementById('llmSelect');
+  const chatComboInput = document.getElementById('chatComboInput');
+  const pipelineComboInput = document.getElementById('pipelineComboInput');
   const fallbackSelect = document.getElementById('fallbackSelect');
-  const customComboInput = document.getElementById('customComboInput');
+  const durationInput = document.getElementById('durationInput');
 
   let chatHistory = [];
 
@@ -843,7 +869,7 @@
     chatHistory.push({ role: 'user', content: text });
     promptInput.value = '';
 
-    const chatLLM = chatLlmSelect.value;
+    const chatLLM = chatComboInput.value.trim() || "auto/claude/opus";
     const fallbackLLM = fallbackSelect.value;
 
     btnChatSend.disabled = true;
@@ -884,37 +910,41 @@
     }
   });
 
-  // Real-time OmniRoute Live Combos Auto-Fetcher
+  // Real-time OmniRoute Live Combos Auto-Fetcher & Datalist Populator
   async function fetchOmniRouteCombos(){
     try {
       const res = await fetch('/api/omniroute_models');
       const d = await res.json();
+      const datalist = document.getElementById('omniCombosDatalist');
       const combosList = document.getElementById('combosList');
 
-      let chatOptionsHtml = `<option value="auto/claude/opus" selected>Combo: auto/claude/opus (Recommended)</option>`;
-      let pipelineOptionsHtml = `<option value="antigravity/gemini-3.5-flash-low" selected>Gemini Combo: 3.5 Flash (Fast)</option>
-                                 <option value="agy/gemini-3.1-pro-high">Gemini Combo: 3.1 Pro (High)</option>`;
-      let fallbackHtml = `<option value="auto/claude" selected>Combo: auto/claude</option>
-                          <option value="antigravity/gemini-3.5-flash-low">Gemini 3.5 Flash</option>
-                          <option value="free">FreeBuff (100% Free)</option>`;
+      let optionsHtml = "";
 
-      if(d.user_combos && d.user_combos.length > 0){
-        chatOptionsHtml += `<optgroup label="✨ Your OmniRoute User Combos">`;
-        pipelineOptionsHtml += `<optgroup label="✨ Your OmniRoute User Combos">`;
-        d.user_combos.forEach(c => {
-          chatOptionsHtml += `<option value="${c.id}">Combo: ${c.id}</option>`;
-          pipelineOptionsHtml += `<option value="${c.id}">Combo: ${c.id}</option>`;
-          fallbackHtml += `<option value="${c.id}">Combo: ${c.id}</option>`;
+      // Add Gemini Combos
+      if(d.gemini_combos && d.gemini_combos.length > 0){
+        d.gemini_combos.forEach(c => {
+          optionsHtml += `<option value="${c.id}">Gemini: ${c.id}</option>`;
         });
-        chatOptionsHtml += `</optgroup>`;
-        pipelineOptionsHtml += `</optgroup>`;
       }
 
-      chatLlmSelect.innerHTML = chatOptionsHtml;
-      llmSelect.innerHTML = pipelineOptionsHtml;
-      fallbackSelect.innerHTML = fallbackHtml;
+      // Add User Combos
+      if(d.user_combos && d.user_combos.length > 0){
+        d.user_combos.forEach(c => {
+          optionsHtml += `<option value="${c.id}">Combo: ${c.id}</option>`;
+        });
+      }
 
-      // Update Active Combos list
+      optionsHtml += `
+        <option value="auto/claude/opus">Combo: auto/claude/opus</option>
+        <option value="auto/claude">Combo: auto/claude</option>
+        <option value="antigravity/gemini-3.5-flash-low">Gemini 3.5 Flash Low</option>
+        <option value="agy/gemini-3.1-pro-high">Gemini 3.1 Pro High</option>
+        <option value="free">FreeBuff (100% Free)</option>
+      `;
+
+      datalist.innerHTML = optionsHtml;
+
+      // Update Active Combos list in right column
       let comboItemsHtml = `
         <div class="combo-item">
           <span>FreeBuff CLI</span>
@@ -930,8 +960,19 @@
         </div>
       `;
 
+      if(d.gemini_combos && d.gemini_combos.length > 0){
+        d.gemini_combos.slice(0, 3).forEach(c => {
+          comboItemsHtml += `
+            <div class="combo-item">
+              <span style="color:var(--orange-2)">${c.id}</span>
+              <span class="badge-free" style="color:var(--orange-2); border-color:var(--orange);">Gemini Combo</span>
+            </div>
+          `;
+        });
+      }
+
       if(d.user_combos && d.user_combos.length > 0){
-        d.user_combos.forEach(c => {
+        d.user_combos.slice(0, 4).forEach(c => {
           comboItemsHtml += `
             <div class="combo-item">
               <span style="color:var(--orange-2)">${c.id}</span>
@@ -991,9 +1032,8 @@
   }
 
   function updateModelMatrix(){
-    const chatLlm = chatLlmSelect.value;
-    const custom = customComboInput.value.trim();
-    const primary = custom || llmSelect.value;
+    const chatLlm = chatComboInput.value.trim() || "auto/claude/opus";
+    const primary = pipelineComboInput.value.trim() || "antigravity/gemini-3.5-flash-low";
     const fallback = fallbackSelect.value;
 
     document.getElementById('chatModelText').textContent = `Combo: ${chatLlm}`;
@@ -1003,10 +1043,9 @@
     document.getElementById('ag2FallbackText').textContent = `Fallback: ${fallback}`;
   }
 
-  chatLlmSelect.addEventListener('change', updateModelMatrix);
-  llmSelect.addEventListener('change', updateModelMatrix);
+  chatComboInput.addEventListener('input', updateModelMatrix);
+  pipelineComboInput.addEventListener('input', updateModelMatrix);
   fallbackSelect.addEventListener('change', updateModelMatrix);
-  customComboInput.addEventListener('input', updateModelMatrix);
 
   // Real-time OmniRoute Status Checker
   async function checkOmniRouteStatus(){
@@ -1114,13 +1153,12 @@
 
     const lang = document.getElementById('langSelect').value;
     const fmt = document.getElementById('formatSelect').value;
-    const dur = document.getElementById('durationSelect').value;
+    const dur = durationInput.value.trim() || "5";
     
-    const customCombo = customComboInput.value.trim();
-    const primaryLLM = customCombo || llmSelect.value;
+    const primaryLLM = pipelineComboInput.value.trim() || "antigravity/gemini-3.5-flash-low";
     const fallbackLLM = fallbackSelect.value;
 
-    const sseUrl = `/api/pipeline/stream?prompt=${encodeURIComponent(approvedPrompt)}&language=${lang}&format=${fmt}&duration=${dur}&llm_mode=${encodeURIComponent(primaryLLM)}&fallback_mode=${encodeURIComponent(fallbackLLM)}`;
+    const sseUrl = `/api/pipeline/stream?prompt=${encodeURIComponent(approvedPrompt)}&language=${lang}&format=${fmt}&duration=${encodeURIComponent(dur)}&llm_mode=${encodeURIComponent(primaryLLM)}&fallback_mode=${encodeURIComponent(fallbackLLM)}`;
     const eventSource = new EventSource(sseUrl);
 
     eventSource.addEventListener('status', (e) => {
