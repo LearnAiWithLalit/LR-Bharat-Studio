@@ -3,10 +3,9 @@
 web_studio.py — Local Web Studio Server & Interactive Dashboard
 Serves the local web interface on http://localhost:8080.
 Features:
+  - Combo Router: Primary + Secondary Combo Fallback Chain (/api/pipeline/stream).
   - Live OmniRoute Models & Combos Auto-Fetcher (/api/omniroute_models).
   - Universal Hardware Auto-Detector: Auto-fetches AMD (ROCm), NVIDIA (CUDA), Intel (XPU), & CPU info.
-  - OmniRoute Health & Config Checker (/api/omniroute_status).
-  - Real-time System Resource Monitoring (GPU VRAM, System RAM, CPU Load, HIKVISION Disk).
   - SSE progress streaming & media file preview.
 """
 
@@ -211,11 +210,9 @@ def get_omniroute_models():
                 models = data.get("data", [])
                 for m in models:
                     m_id = m.get("id", "")
-                    # Identify user-created combos or custom routes
                     if m_id.startswith("auto/") or m_id.startswith("my-") or "_" in m_id:
                         user_combos.append({"id": m_id, "name": f"Combo: {m_id}", "type": "combo"})
                     elif m_id not in [r["id"] for r in recommended_models]:
-                        # Add provider models if available
                         if any(k in m_id for k in ("claude", "gpt-4", "deepseek", "llama", "mistral")):
                             user_combos.append({"id": m_id, "name": m_id, "type": "model"})
     except Exception:
@@ -327,10 +324,10 @@ async def stream_pipeline(
     format: str = "auto",
     duration: float = 5.0,
     llm_mode: str = "fast",
+    fallback_mode: str = "auto/claude",
 ):
     """
-    SSE stream endpoint executing the 7-agent pipeline step-by-step
-    and pushing updates to the Web UI in real-time.
+    SSE stream endpoint executing the 7-agent pipeline step-by-step with Primary & Fallback Combos.
     """
 
     async def event_generator() -> AsyncGenerator[str, None]:
@@ -355,12 +352,12 @@ async def stream_pipeline(
         yield sse("analysis_ready", {"analysis": config})
         yield sse(
             "status",
-            {"agent": 1, "status": "running", "message": f"Agent 1: Planning topic with [{llm_mode}]..."},
+            {"agent": 1, "status": "running", "message": f"Agent 1: Planning topic [{llm_mode}] → [{fallback_mode}]..."},
         )
 
         # ── Step 1: Agent 1 (Topic Planner) ──────────────────────
         try:
-            yield sse("log", {"agent": 1, "text": f"Formulating story concept using model/combo [{llm_mode}]..."})
+            yield sse("log", {"agent": 1, "text": f"Formulating story concept with Primary Combo [{llm_mode}] (Fallback: {fallback_mode})..."})
             plan_prompt = (
                 f"Create a detailed {config['content_type']} video plan for: {prompt}\n"
                 f"Language: {config['language']}, Duration: {config['target_duration_min']} min\n"
@@ -370,6 +367,7 @@ async def stream_pipeline(
                 plan_prompt,
                 system_prompt="You are an expert story planner. Always return valid raw JSON.",
                 mode=llm_mode,
+                fallback_mode=fallback_mode,
             )
 
             match = re.search(r"\{.*\}", plan_raw, re.DOTALL)
@@ -394,7 +392,7 @@ async def stream_pipeline(
                 {
                     "agent": 2,
                     "status": "running",
-                    "message": f"Agent 2: Writing narration script with [{llm_mode}]...",
+                    "message": f"Agent 2: Writing narration script [{llm_mode}]...",
                 },
             )
         except Exception as e:
@@ -404,7 +402,7 @@ async def stream_pipeline(
 
         # ── Step 2: Agent 2 (Script Writer) ─────────────────────
         try:
-            yield sse("log", {"agent": 2, "text": f"Writing dialogue script using [{llm_mode}]..."})
+            yield sse("log", {"agent": 2, "text": f"Writing dialogue script with Primary Combo [{llm_mode}]..."})
             script_prompt = (
                 f"Write a narration script for title: {topic_data.get('title')}\n"
                 f"Language: {config['language']}, Content: {config['content_type']}\n"
@@ -415,6 +413,7 @@ async def stream_pipeline(
                 script_prompt,
                 system_prompt="You are a professional children's story scriptwriter. Return raw JSON array only.",
                 mode=llm_mode if llm_mode != "fast" else "pro",
+                fallback_mode=fallback_mode,
             )
 
             match = re.search(r"\[\s*\{.*\}\s*\]", script_raw, re.DOTALL)

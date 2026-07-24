@@ -110,7 +110,7 @@
     background:var(--bg); border:1px solid var(--line); border-radius:8px;
     padding:9px 11px; color:var(--text); font-family:var(--body); font-size:13px; outline:none;
   }
-  select.form-select:focus{ border-color:var(--orange); }
+  select.form-select:focus, input.form-input:focus{ border-color:var(--orange); }
   .form-row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 
   /* Cast Selection Chips */
@@ -201,7 +201,7 @@
   .tabs-header{ display:flex; gap:6px; border-bottom:1px solid var(--line); padding-bottom:8px; }
   .tab-btn{
     background:var(--bg-card); border:1px solid var(--line); color:var(--text-dim);
-    padding:9px 15px; border-radius:9px; font-size:13px; font-weight:500;
+    padding:9px 15px; border-radius:99px; font-size:13px; font-weight:500;
     cursor:pointer; transition:all .15s; display:flex; align-items:center; gap:6px;
   }
   .tab-btn.active{ background:rgba(255,122,26,0.15); border-color:var(--orange); color:var(--orange-2); }
@@ -355,26 +355,42 @@
         </div>
       </div>
 
+      <!-- Primary & Fallback Combo Selectors -->
+      <div class="form-group">
+        <div class="form-label">Primary Combo / Model (Agent 1 & 2):</div>
+        <select id="llmSelect" class="form-select">
+          <option value="auto/claude/opus" selected>Combo: auto/claude/opus</option>
+          <option value="auto/claude">Combo: auto/claude</option>
+          <option value="antigravity/gemini-3.5-flash-low">Gemini 3.5 Flash (Fast)</option>
+          <option value="agy/gemini-3.1-pro-high">Gemini 3.1 Pro (High)</option>
+          <option value="free">FreeBuff (100% Free Fallback)</option>
+        </select>
+      </div>
+
       <div class="form-row">
+        <div class="form-group">
+          <div class="form-label">Fallback Combo / Model:</div>
+          <select id="fallbackSelect" class="form-select">
+            <option value="auto/claude" selected>Combo: auto/claude</option>
+            <option value="antigravity/gemini-3.5-flash-low">Gemini 3.5 Flash</option>
+            <option value="free">FreeBuff (100% Free)</option>
+          </select>
+        </div>
         <div class="form-group">
           <div class="form-label">Target Duration:</div>
           <select id="durationSelect" class="form-select">
-            <option value="1">1 minute (Short)</option>
+            <option value="1">1 min (Short)</option>
             <option value="3">3 minutes</option>
-            <option value="5" selected>5 minutes (Standard)</option>
-            <option value="10">10 minutes (Long)</option>
+            <option value="5" selected>5 minutes (Std)</option>
+            <option value="10">10 minutes</option>
           </select>
         </div>
-        <div class="form-group">
-          <div class="form-label">LLM Engine / OmniRoute Combo:</div>
-          <select id="llmSelect" class="form-select">
-            <option value="fast" selected>OmniRoute (Fast Recommended)</option>
-            <option value="pro">OmniRoute (Pro)</option>
-            <option value="auto/claude">OmniRoute Combo: auto/claude</option>
-            <option value="auto/claude/opus">OmniRoute Combo: auto/claude/opus</option>
-            <option value="free">FreeBuff (100% Free Fallback)</option>
-          </select>
-        </div>
+      </div>
+
+      <!-- Custom Project Combo Input -->
+      <div class="form-group">
+        <div class="form-label">Custom Project Combo Name (Optional):</div>
+        <input type="text" id="customComboInput" class="form-input" placeholder="e.g. auto/claude/opus or my_combo">
       </div>
 
       <!-- OmniRoute Config Helper -->
@@ -571,8 +587,8 @@
           <span>Agent 1 · Topic Planner</span>
           <span style="color:var(--green)">$0</span>
         </div>
-        <div class="agent-model-primary" id="ag1ModelText">Primary: Gemini 3.5 Flash Low</div>
-        <div class="agent-model-fallback">Fallback: MiniMax M3 (FreeBuff)</div>
+        <div class="agent-model-primary" id="ag1ModelText">Primary: auto/claude/opus</div>
+        <div class="agent-model-fallback" id="ag1FallbackText">Fallback: auto/claude</div>
       </div>
 
       <!-- Agent 2 Model -->
@@ -581,8 +597,8 @@
           <span>Agent 2 · Script Writer</span>
           <span style="color:var(--green)">$0</span>
         </div>
-        <div class="agent-model-primary" id="ag2ModelText">Primary: Gemini 3.1 Pro High</div>
-        <div class="agent-model-fallback">Fallback: DeepSeek V4 Pro (FreeBuff)</div>
+        <div class="agent-model-primary" id="ag2ModelText">Primary: auto/claude/opus</div>
+        <div class="agent-model-fallback" id="ag2FallbackText">Fallback: auto/claude</div>
       </div>
 
       <!-- Agent 3 Engine -->
@@ -644,12 +660,8 @@
           <span class="badge-free">Local GPU</span>
         </div>
         <div class="combo-item">
-          <span>FLUX + SDXL Lightning</span>
+          <span>FLUX + SDXL</span>
           <span class="badge-free">Local GPU</span>
-        </div>
-        <div class="combo-item">
-          <span>OmniRoute Proxy</span>
-          <span style="color:var(--blue)">Port :20128</span>
         </div>
       </div>
 
@@ -672,24 +684,35 @@
       const res = await fetch('/api/omniroute_models');
       const d = await res.json();
       const llmSelect = document.getElementById('llmSelect');
+      const fallbackSelect = document.getElementById('fallbackSelect');
       const combosList = document.getElementById('combosList');
 
-      let optionsHtml = `<option value="fast" selected>OmniRoute (Fast Recommended)</option>
-                         <option value="pro">OmniRoute (Pro High Quality)</option>`;
+      let optionsHtml = "";
+      let fallbackHtml = `<option value="auto/claude" selected>Combo: auto/claude</option>
+                          <option value="antigravity/gemini-3.5-flash-low">Gemini 3.5 Flash</option>
+                          <option value="free">FreeBuff (100% Free)</option>`;
 
       if(d.user_combos && d.user_combos.length > 0){
         optionsHtml += `<optgroup label="✨ Your OmniRoute User Combos">`;
         d.user_combos.forEach(c => {
           optionsHtml += `<option value="${c.id}">Combo: ${c.id}</option>`;
+          fallbackHtml += `<option value="${c.id}">Combo: ${c.id}</option>`;
         });
         optionsHtml += `</optgroup>`;
       }
 
-      optionsHtml += `<optgroup label="🆓 Free Fallback">
+      optionsHtml += `<optgroup label="⚡ Recommended OmniRoute Models">
+                        <option value="antigravity/gemini-3.5-flash-low">Gemini 3.5 Flash (Fast)</option>
+                        <option value="agy/gemini-3.1-pro-high">Gemini 3.1 Pro (High)</option>
+                      </optgroup>
+                      <optgroup label="🆓 Free Fallback">
                         <option value="free">FreeBuff (100% Free, No Key)</option>
                       </optgroup>`;
 
-      llmSelect.innerHTML = optionsHtml;
+      if(optionsHtml){
+        llmSelect.innerHTML = optionsHtml;
+      }
+      fallbackSelect.innerHTML = fallbackHtml;
 
       // Update Active Combos list
       let comboItemsHtml = `
@@ -723,26 +746,30 @@
   }
   fetchOmniRouteCombos();
 
-  // Dynamic Agent Model Matrix update when user selects LLM
+  // Dynamic Agent Model Matrix update when user selects Primary/Fallback or Custom
   const llmSelect = document.getElementById('llmSelect');
-  llmSelect.addEventListener('change', () => {
-    const val = llmSelect.value;
+  const fallbackSelect = document.getElementById('fallbackSelect');
+  const customComboInput = document.getElementById('customComboInput');
+
+  function updateModelMatrix(){
+    const custom = customComboInput.value.trim();
+    const primary = custom || llmSelect.value;
+    const fallback = fallbackSelect.value;
+
     const ag1Text = document.getElementById('ag1ModelText');
     const ag2Text = document.getElementById('ag2ModelText');
-    if(val === 'fast'){
-      ag1Text.textContent = "Primary: Gemini 3.5 Flash Low";
-      ag2Text.textContent = "Primary: Gemini 3.1 Pro High";
-    } else if(val === 'pro'){
-      ag1Text.textContent = "Primary: Gemini 3.1 Pro High";
-      ag2Text.textContent = "Primary: Gemini 3.1 Pro High";
-    } else if(val === 'free'){
-      ag1Text.textContent = "Primary: MiniMax M3 (FreeBuff)";
-      ag2Text.textContent = "Primary: DeepSeek V4 (FreeBuff)";
-    } else {
-      ag1Text.textContent = `Combo: ${val}`;
-      ag2Text.textContent = `Combo: ${val}`;
-    }
-  });
+    const ag1Fall = document.getElementById('ag1FallbackText');
+    const ag2Fall = document.getElementById('ag2FallbackText');
+
+    ag1Text.textContent = `Primary: ${primary}`;
+    ag2Text.textContent = `Primary: ${primary}`;
+    ag1Fall.textContent = `Fallback: ${fallback}`;
+    ag2Fall.textContent = `Fallback: ${fallback}`;
+  }
+
+  llmSelect.addEventListener('change', updateModelMatrix);
+  fallbackSelect.addEventListener('change', updateModelMatrix);
+  customComboInput.addEventListener('input', updateModelMatrix);
 
   // Real-time OmniRoute Status Checker
   async function checkOmniRouteStatus(){
@@ -897,9 +924,12 @@
     const lang = document.getElementById('langSelect').value;
     const fmt = document.getElementById('formatSelect').value;
     const dur = document.getElementById('durationSelect').value;
-    const llm = document.getElementById('llmSelect').value;
+    
+    const customCombo = customComboInput.value.trim();
+    const primaryLLM = customCombo || llmSelect.value;
+    const fallbackLLM = fallbackSelect.value;
 
-    const sseUrl = `/api/pipeline/stream?prompt=${encodeURIComponent(prompt)}&language=${lang}&format=${fmt}&duration=${dur}&llm_mode=${llm}`;
+    const sseUrl = `/api/pipeline/stream?prompt=${encodeURIComponent(prompt)}&language=${lang}&format=${fmt}&duration=${dur}&llm_mode=${encodeURIComponent(primaryLLM)}&fallback_mode=${encodeURIComponent(fallbackLLM)}`;
     const eventSource = new EventSource(sseUrl);
 
     eventSource.addEventListener('status', (e) => {

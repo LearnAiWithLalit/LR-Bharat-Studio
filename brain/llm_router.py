@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-brain/llm_router.py — Smart LLM & Combo Router
+brain/llm_router.py — Smart LLM & Combo Router with Primary + Fallback Combos
 Priority chain:
-  1. OmniRoute (localhost:20128) — routes to user-configured Combos (e.g. auto/claude, auto/claude/opus) or provider models
-  2. FreeBuff CLI   — 100% free, no API key needed (fallback brain)
+  1. OmniRoute Primary (e.g. auto/claude/opus or custom project combo)
+  2. OmniRoute Fallback (e.g. auto/claude or antigravity/gemini-3.5-flash-low)
+  3. FreeBuff CLI       (100% free fallback, MiniMax M3 + DeepSeek V4)
 
-Agents call call_llm() with mode="fast", mode="pro", or a custom Combo model name (e.g. "auto/claude").
+Agents call call_llm() with mode="fast", mode="pro", or a custom Combo model name (e.g. "auto/claude/opus").
 """
 import json
 import os
@@ -22,7 +23,6 @@ OMNIROUTE_MODEL_PRO  = os.environ.get("OMNIROUTE_MODEL_PRO",  "agy/gemini-3.1-pr
 
 # ── FreeBuff (free fallback) ───────────────────────────────────────────
 FREEBUFF_NODE   = os.path.join(os.path.dirname(__file__), "../tools/freebuff/node")
-FREEBUFF_NPKG   = "freebuff"   # npm package name
 
 def _call_omniroute(messages, model, temperature=0.3, max_tokens=4096, timeout=45):
     headers = {
@@ -66,7 +66,6 @@ def _call_freebuff(prompt, system_prompt="", timeout=60):
     except (FileNotFoundError, subprocess.TimeoutExpired):
         pass
 
-    # Try via node binary directly if npx not found
     node_bin = FREEBUFF_NODE if os.path.exists(FREEBUFF_NODE) else "node"
     with tempfile.NamedTemporaryFile(mode="w", suffix=".js", delete=False) as f:
         f.write(f"""
@@ -81,38 +80,51 @@ process.stdout.write(JSON.stringify({{error: "freebuff_not_installed"}}));
         os.unlink(tmp)
 
 def call_llm(prompt, system_prompt="You are a helpful AI assistant.", mode="fast",
-             temperature=0.3, max_tokens=4096):
+             fallback_mode=None, temperature=0.3, max_tokens=4096):
     """
     Public API for all agents.
     mode can be:
       - "fast" : uses OMNIROUTE_MODEL_FAST (antigravity/gemini-3.5-flash-low)
       - "pro"  : uses OMNIROUTE_MODEL_PRO (agy/gemini-3.1-pro-high)
       - "free" : forces FreeBuff fallback (100% Free, no API key)
-      - Any custom Combo or Model ID string (e.g., "auto/claude", "auto/claude/opus", "Image_Model")
+      - Any custom Combo or Model ID string (e.g., "auto/claude/opus", "bharat_studio_combo")
+    
+    fallback_mode (optional): secondary Combo or model if primary fails.
     """
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user",   "content": prompt},
     ]
 
-    # Resolve target model
+    # Resolve target primary model
     if mode == "fast":
-        target_model = OMNIROUTE_MODEL_FAST
+        primary_model = OMNIROUTE_MODEL_FAST
     elif mode == "pro":
-        target_model = OMNIROUTE_MODEL_PRO
+        primary_model = OMNIROUTE_MODEL_PRO
     else:
-        target_model = mode
+        primary_model = mode
 
-    # Try OmniRoute first if not explicitly forced to 'free'
+    # 1. Try OmniRoute Primary Combo / Model
     if mode != "free":
         try:
-            response = _call_omniroute(messages, target_model, temperature, max_tokens)
-            print(f"[LLM Router] ✅ OmniRoute [{target_model}] responded.")
+            response = _call_omniroute(messages, primary_model, temperature, max_tokens)
+            print(f"[LLM Router] ✅ OmniRoute Primary [{primary_model}] responded.")
             return response
         except Exception as e:
-            print(f"[LLM Router] ⚠️  OmniRoute [{target_model}] failed ({e}). Falling back to FreeBuff...")
+            print(f"[LLM Router] ⚠️  OmniRoute Primary [{primary_model}] failed ({e}).")
 
-    # Fallback: FreeBuff (100% free, no API key)
+    # 2. Try OmniRoute Secondary Fallback Combo / Model if specified
+    if fallback_mode and fallback_mode not in (mode, "free"):
+        fallback_target = OMNIROUTE_MODEL_FAST if fallback_mode == "fast" else \
+                         OMNIROUTE_MODEL_PRO if fallback_mode == "pro" else fallback_mode
+        try:
+            response = _call_omniroute(messages, fallback_target, temperature, max_tokens)
+            print(f"[LLM Router] ✅ OmniRoute Fallback [{fallback_target}] responded.")
+            return response
+        except Exception as e:
+            print(f"[LLM Router] ⚠️  OmniRoute Fallback [{fallback_target}] also failed ({e}).")
+
+    # 3. Fallback: FreeBuff (100% free, no API key)
     try:
         response = _call_freebuff(prompt, system_prompt)
         if response and "freebuff_not_installed" not in response:
@@ -121,9 +133,9 @@ def call_llm(prompt, system_prompt="You are a helpful AI assistant.", mode="fast
     except Exception as e:
         print(f"[LLM Router] ❌ FreeBuff also failed: {e}")
 
-    raise RuntimeError("All LLM backends failed. Check OmniRoute (localhost:20128) or install FreeBuff: npm install -g freebuff")
+    raise RuntimeError(f"All LLM backends failed (Primary: {primary_model}, Fallback: {fallback_mode}). Check OmniRoute (localhost:20128) or install FreeBuff.")
 
 if __name__ == "__main__":
-    print("Testing LLM Router with custom Combo model string...")
-    resp = call_llm('Respond with JSON: {"status": "ok", "router": "working"}', mode="auto/claude")
+    print("Testing LLM Router with Combo fallback...")
+    resp = call_llm('Respond with JSON: {"status": "ok"}', mode="auto/claude/opus", fallback_mode="auto/claude")
     print("Response:", resp)
