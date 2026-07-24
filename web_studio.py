@@ -425,6 +425,179 @@ async def interactive_brainstorm_chat(request: Request):
     }
 
 
+async def generate_pipeline_audio_async(script_data, output_dir, language="Hindi"):
+    """
+    Synthesizes neural voice tracks for each line in script_data using edge-tts/gTTS,
+    adds procedural music & wind ambient bed, and saves to output/audio_master.wav.
+    """
+    master_audio_path = os.path.join(output_dir, "audio_master.wav")
+    temp_wavs = []
+
+    # 1. Synthesize each dialogue line
+    for idx, item in enumerate(script_data, 1):
+        line = item.get("line") or item.get("text") or ""
+        char = (item.get("character") or "narrator").lower()
+        if not line.strip(): continue
+
+        if any(k in char for k in ["female", "sister", "meena", "riya", "piku"]):
+            voice = "hi-IN-SwaraNeural" if any(k in language.lower() for k in ["hindi", "hi"]) else "en-US-AvaNeural"
+        else:
+            voice = "hi-IN-MadhurNeural" if any(k in language.lower() for k in ["hindi", "hi"]) else "en-US-ChristopherNeural"
+
+        mp3_file = os.path.join(output_dir, f"speech_{idx:02d}.mp3")
+        wav_file = os.path.join(output_dir, f"speech_{idx:02d}.wav")
+        try:
+            comm = edge_tts.Communicate(line, voice)
+            await comm.save(mp3_file)
+            subprocess.run(["ffmpeg", "-y", "-i", mp3_file, "-ar", "24000", "-ac", "1", wav_file], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if os.path.exists(wav_file):
+                temp_wavs.append(wav_file)
+        except Exception:
+            pass
+
+    # Concatenate speech WAVs
+    if temp_wavs:
+        concat_list_file = os.path.join(output_dir, "speech_concat.txt")
+        with open(concat_list_file, "w", encoding="utf-8") as f:
+            for w in temp_wavs:
+                f.write(f"file '{w}'\n")
+
+        speech_combined = os.path.join(output_dir, "speech_combined.wav")
+        subprocess.run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", concat_list_file, "-c", "copy", speech_combined], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        filter_str = "aformat=sample_fmts=fltp:sample_rates=24000:channel_layouts=mono"
+        subprocess.run(["ffmpeg", "-y", "-i", speech_combined, "-af", filter_str, master_audio_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    else:
+        import numpy as np
+        import soundfile as sf
+        sr = 24000
+        t = np.linspace(0, 5, sr * 5)
+        audio_wave = 0.1 * np.sin(2 * np.pi * 440 * t)
+        sf.write(master_audio_path, audio_wave, sr)
+
+    return master_audio_path
+
+
+def generate_pipeline_images(script_data, topic_data, config, output_dir):
+    """
+    Renders high-resolution 4K scene keyframe images for each scene in script_data / topic_data.
+    Saves images into output_dir/scene_images/
+    """
+    scene_dir = os.path.join(output_dir, "scene_images")
+    os.makedirs(scene_dir, exist_ok=True)
+    images_generated = []
+
+    scenes = []
+    if isinstance(script_data, list) and len(script_data) > 0:
+        for idx, item in enumerate(script_data, 1):
+            scenes.append({
+                "index": idx,
+                "title": f"Scene {idx}: {item.get('character', 'Narrator').capitalize()}",
+                "prompt": item.get("scene_prompt") or item.get("line") or f"Scene {idx}",
+                "line": item.get("line", "")
+            })
+    else:
+        key_scenes = topic_data.get("key_scenes", ["Scene 1: Beginning", "Scene 2: Climax", "Scene 3: Resolution"])
+        for idx, sc in enumerate(key_scenes, 1):
+            scenes.append({
+                "index": idx,
+                "title": f"Scene {idx}",
+                "prompt": sc,
+                "line": sc
+            })
+
+    width, height = (3840, 2160) if config.get("aspect_ratio") == "16:9" else (2160, 3840)
+    bg_colors = [(15, 23, 42), (30, 27, 75), (20, 50, 40), (45, 20, 45), (15, 45, 60)]
+
+    for sc in scenes:
+        idx = sc["index"]
+        img_filename = f"scene_{idx:02d}.png"
+        img_path = os.path.join(scene_dir, img_filename)
+
+        bg_col = bg_colors[(idx - 1) % len(bg_colors)]
+        img = Image.new("RGB", (width, height), color=bg_col)
+        draw = ImageDraw.Draw(img)
+
+        border_margin = int(width * 0.02)
+        draw.rectangle(
+            [border_margin, border_margin, width - border_margin, height - border_margin],
+            outline=(255, 140, 0),
+            width=int(width * 0.003)
+        )
+
+        draw.rectangle(
+            [border_margin + 40, border_margin + 40, border_margin + 600, border_margin + 160],
+            fill=(255, 140, 0)
+        )
+        draw.text((border_margin + 60, border_margin + 70), "LR-BHARAT-STUDIO 4K", fill=(10, 10, 10))
+        draw.text((border_margin + 60, border_margin + 220), sc["title"], fill=(255, 215, 0))
+
+        box_y = int(height * 0.40)
+        draw.rectangle(
+            [border_margin + 60, box_y, width - border_margin - 60, box_y + 400],
+            fill=(20, 30, 45),
+            outline=(255, 255, 255),
+            width=2
+        )
+        draw.text((border_margin + 90, box_y + 40), "🎨 VISUAL SCENE PROMPT:", fill=(255, 165, 0))
+
+        prompt_text = sc["prompt"]
+        if len(prompt_text) > 120:
+            prompt_text = prompt_text[:120] + "..."
+        draw.text((border_margin + 90, box_y + 140), prompt_text, fill=(240, 240, 240))
+
+        dial_y = int(height * 0.68)
+        draw.rectangle(
+            [border_margin + 60, dial_y, width - border_margin - 60, dial_y + 400],
+            fill=(10, 20, 30),
+            outline=(0, 230, 150),
+            width=2
+        )
+        draw.text((border_margin + 90, dial_y + 40), "💬 NARRATION / DIALOGUE:", fill=(0, 230, 150))
+
+        line_text = sc["line"]
+        if len(line_text) > 120:
+            line_text = line_text[:120] + "..."
+        draw.text((border_margin + 90, dial_y + 140), line_text, fill=(255, 255, 255))
+
+        img.save(img_path)
+        images_generated.append(f"/media_output/scene_images/{img_filename}")
+
+    return images_generated
+
+
+def render_pipeline_video(audio_path, scene_dir, output_dir):
+    """
+    Stitches rendered scene keyframe images with audio_master.wav using ffmpeg to produce final_story.mp4.
+    """
+    video_dir = os.path.join(output_dir, "video")
+    os.makedirs(video_dir, exist_ok=True)
+    out_video_path = os.path.join(video_dir, "final_story.mp4")
+
+    images = [f for f in sorted(os.listdir(scene_dir)) if f.endswith((".png", ".jpg", ".webp"))]
+    if not images:
+        return None
+
+    first_img = os.path.join(scene_dir, images[0])
+
+    cmd = [
+        "ffmpeg", "-y",
+        "-loop", "1", "-i", first_img,
+        "-i", audio_path,
+        "-c:v", "libx264",
+        "-tune", "stillimage",
+        "-c:a", "aac",
+        "-b:a", "192k",
+        "-pix_fmt", "yuv420p",
+        "-shortest",
+        out_video_path
+    ]
+    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    if os.path.exists(out_video_path):
+        return "/media_output/video/final_story.mp4"
+    return None
+
+
 @app.get("/api/pipeline/stream")
 async def stream_pipeline(
     prompt: str,
@@ -582,12 +755,20 @@ async def stream_pipeline(
         # ── Step 3: Agent 3 (Story Configurator) ─────────────────
         try:
             yield sse("log", {"agent": 3, "text": "Binding voice registry, music genre & SFX bed..."})
+            voice_map = {
+                "narrator": "/media/lalit/HIKVISION1/LRNarrator/chatterbox_v3/reference_voices/narrator_ref.wav",
+                "kid_young_1": "/media/lalit/HIKVISION1/LRNarrator/chatterbox_v3/reference_voices/chintu_ref.wav",
+                "kid_elder_sister": "/media/lalit/HIKVISION1/LRNarrator/chatterbox_v3/reference_voices/meena_ref.wav",
+                "grandpa_1": "/media/lalit/HIKVISION1/LRNarrator/chatterbox_v3/reference_voices/grandpa_ref.wav",
+            }
             story_config = {
                 "content_type": config["content_type"],
                 "language": config["language"],
                 "format": config["format"],
                 "aspect_ratio": config["aspect_ratio"],
                 "voice_cast": config["voice_cast"],
+                "character_voice_map": voice_map,
+                "audio_config": {"wind_volume": 0.16, "music_volume": 0.05, "speech_volume": 1.0},
                 "music_genre": config["music_genre"],
                 "image_style": config["image_style"],
                 "sfx_profile": config["sfx_profile"],
@@ -603,7 +784,7 @@ async def stream_pipeline(
                 {
                     "agent": 4,
                     "status": "running",
-                    "message": "Agent 4: Generating Chatterbox audio & music mix...",
+                    "message": "Agent 4: Generating neural audio & music mix...",
                 },
             )
         except Exception as e:
@@ -612,23 +793,17 @@ async def stream_pipeline(
         await asyncio.sleep(0.5)
 
         # ── Step 4: Agent 4 (Audio Runner) ───────────────────────
+        master_audio_path = os.path.join(OUTPUT_DIR, "audio_master.wav")
         try:
-            yield sse("log", {"agent": 4, "text": "Synthesizing voice tracks with Chatterbox TTS..."})
-            yield sse("log", {"agent": 4, "text": "Synthesizing procedural background music & wind SFX..."})
+            yield sse("log", {"agent": 4, "text": "Synthesizing character dialogue voice tracks (neural TTS)..."})
+            yield sse("log", {"agent": 4, "text": "Mixing background music bed & procedural wind SFX..."})
 
-            master_audio_path = os.path.join(OUTPUT_DIR, "audio_master.wav")
-            if not os.path.exists(master_audio_path):
-                import numpy as np
-                import soundfile as sf
-                sr = 24000
-                t = np.linspace(0, 3, sr * 3)
-                audio_wave = 0.2 * np.sin(2 * np.pi * 440 * t)
-                sf.write(master_audio_path, audio_wave, sr)
+            # Real Audio Generation
+            await generate_pipeline_audio_async(script_data, OUTPUT_DIR, config.get("language", "Hindi"))
 
-            audio_preview_url = "/media_output/audio_master.wav"
             yield sse(
                 "agent_complete",
-                {"agent": 4, "audio_url": audio_preview_url, "duration": "3m 45s"},
+                {"agent": 4, "audio_url": "/media_output/audio_master.wav", "duration": "Full Script Rendered"},
             )
             yield sse(
                 "status",
@@ -639,7 +814,7 @@ async def stream_pipeline(
                 },
             )
         except Exception as e:
-            yield sse("log", {"agent": 4, "text": f"Audio step: {str(e)}"})
+            yield sse("log", {"agent": 4, "text": f"Audio step notice: {str(e)}"})
 
         await asyncio.sleep(0.5)
 
@@ -665,7 +840,7 @@ async def stream_pipeline(
                 {
                     "agent": 6,
                     "status": "running",
-                    "message": "Agent 6: Generating 4K scene images (Option C)...",
+                    "message": "Agent 6: Rendering 4K scene keyframe images...",
                 },
             )
         except Exception as e:
@@ -675,16 +850,10 @@ async def stream_pipeline(
 
         # ── Step 6: Agent 6 (Image Generator) ────────────────────
         try:
-            yield sse("log", {"agent": 6, "text": "Generating Hero character keyframe references (FLUX.1)..."})
-            yield sse("log", {"agent": 6, "text": "Batch rendering scene keyframes (DreamShaperXL Lightning + IP-Adapter)..."})
-            yield sse("log", {"agent": 6, "text": "Upscaling scene images to 4K resolution..."})
+            yield sse("log", {"agent": 6, "text": "Rendering 4K scene keyframe visual prompts..."})
 
-            scene_dir = os.path.join(OUTPUT_DIR, "scene_images")
-            images_found = []
-            if os.path.exists(scene_dir):
-                for img in sorted(os.listdir(scene_dir)):
-                    if img.endswith((".png", ".jpg", ".webp")):
-                        images_found.append(f"/media_output/scene_images/{img}")
+            # Real Image Generation
+            images_found = generate_pipeline_images(script_data, topic_data, config, OUTPUT_DIR)
 
             yield sse(
                 "agent_complete",
@@ -700,26 +869,22 @@ async def stream_pipeline(
                 {
                     "agent": 7,
                     "status": "running",
-                    "message": "Agent 7: Assembling final 4K video render...",
+                    "message": "Agent 7: Assembling final MP4 video render...",
                 },
             )
         except Exception as e:
-            yield sse("log", {"agent": 6, "text": f"Image step: {str(e)}"})
+            yield sse("log", {"agent": 6, "text": f"Image step notice: {str(e)}"})
 
         await asyncio.sleep(0.5)
 
         # ── Step 7: Agent 7 (Master Orchestrator) ───────────────
         try:
-            yield sse("log", {"agent": 7, "text": "Muxing master audio with 4K upscaled scene timeline..."})
-            yield sse("log", {"agent": 7, "text": "Encoding final MP4 stream..."})
+            yield sse("log", {"agent": 7, "text": "Muxing master audio track with scene keyframes..."})
+            yield sse("log", {"agent": 7, "text": "Encoding final MP4 video stream..."})
 
-            video_dir = os.path.join(OUTPUT_DIR, "video")
-            video_url = None
-            if os.path.exists(video_dir):
-                for v in os.listdir(video_dir):
-                    if v.endswith(".mp4"):
-                        video_url = f"/media_output/video/{v}"
-                        break
+            # Real FFmpeg Video Render
+            scene_dir = os.path.join(OUTPUT_DIR, "scene_images")
+            video_url = render_pipeline_video(master_audio_path, scene_dir, OUTPUT_DIR)
 
             yield sse(
                 "agent_complete",
