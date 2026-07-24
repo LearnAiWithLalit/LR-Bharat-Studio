@@ -64,32 +64,70 @@
 
   /* 3-Column Studio Layout */
   .studio-container{
-    display:grid; grid-template-columns:400px 1fr 380px; gap:20px;
+    display:grid; grid-template-columns:420px 1fr 380px; gap:20px;
     width:100%; padding:20px 24px; min-height:calc(100vh - 70px);
     position:relative; z-index:10;
   }
 
-  /* Left Column: Input & Controls & System Stats */
+  /* Left Column: Interactive Chat & Controls */
   .left-column{ display:flex; flex-direction:column; gap:20px; }
 
   .panel-input{
     background:var(--bg-card); border:1px solid var(--line);
-    border-radius:16px; padding:22px; display:flex; flex-direction:column; gap:16px;
+    border-radius:16px; padding:20px; display:flex; flex-direction:column; gap:14px;
     box-shadow:0 20px 50px rgba(0,0,0,0.5);
   }
-  .panel-title{ font-family:var(--display); font-size:16.5px; font-weight:600; display:flex; align-items:center; gap:8px; }
+  .panel-title{ font-family:var(--display); font-size:16px; font-weight:600; display:flex; align-items:center; justify-content:space-between; }
+
+  /* Interactive Chat Box Thread */
+  .chat-thread-container{
+    background:var(--bg); border:1px solid var(--line); border-radius:12px;
+    height:210px; padding:12px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;
+  }
+  .chat-msg{ display:flex; flex-direction:column; gap:4px; max-width:92%; font-size:13px; line-height:1.45; }
+  .chat-msg.user{ align-self:flex-end; }
+  .chat-msg.assistant{ align-self:flex-start; }
+  .chat-bubble{
+    padding:9px 12px; border-radius:10px; font-family:var(--body);
+  }
+  .chat-msg.user .chat-bubble{
+    background:rgba(255,122,26,0.15); border:1px solid rgba(255,122,26,0.3); color:var(--orange-2);
+  }
+  .chat-msg.assistant .chat-bubble{
+    background:var(--bg-card-2); border:1px solid var(--line); color:var(--text); white-space:pre-wrap;
+  }
+  .chat-sender{ font-size:10.5px; font-family:var(--mono); color:var(--text-faint); margin-bottom:2px; }
 
   .prompt-box-wrap{ display:flex; flex-direction:column; gap:6px; }
-  .prompt-label{ font-size:12.5px; font-weight:500; color:var(--text-dim); display:flex; justify-content:space-between; }
+  .prompt-label{ font-size:12px; font-weight:500; color:var(--text-dim); display:flex; justify-content:space-between; }
   .prompt-hint{ font-size:11px; color:var(--text-faint); font-family:var(--mono); }
 
   textarea.prompt-input{
-    width:100%; height:110px; background:var(--bg); border:1px solid var(--line);
-    border-radius:12px; padding:12px; color:var(--text); font-family:var(--body);
-    font-size:13.5px; line-height:1.55; resize:none; outline:none;
+    width:100%; height:75px; background:var(--bg); border:1px solid var(--line);
+    border-radius:10px; padding:10px; color:var(--text); font-family:var(--body);
+    font-size:13px; line-height:1.5; resize:none; outline:none;
     transition:border-color .15s, box-shadow .15s;
   }
   textarea.prompt-input:focus{ border-color:var(--orange); box-shadow:0 0 12px rgba(255,122,26,0.2); }
+
+  /* Dual Action Buttons */
+  .action-btn-row{ display:grid; grid-template-columns:1fr 1.2fr; gap:10px; }
+  .btn-chat-send{
+    background:var(--bg-card-2); border:1px solid var(--line); color:var(--text);
+    padding:11px; border-radius:10px; font-weight:600; font-size:13px; cursor:pointer;
+    transition:all .15s; display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .btn-chat-send:hover{ border-color:var(--orange); color:var(--orange-2); }
+
+  .btn-launch{
+    background:linear-gradient(135deg, var(--green), #1b8a2a);
+    color:#051f09; border:none; padding:11px; border-radius:10px;
+    font-family:var(--display); font-weight:700; font-size:13.5px;
+    cursor:pointer; transition:transform .15s, box-shadow .15s;
+    box-shadow:0 8px 25px rgba(40,200,64,0.3); display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .btn-launch:hover{ transform:translateY(-2px); box-shadow:0 12px 35px rgba(40,200,64,0.45); }
+  .btn-launch:disabled{ opacity:0.5; cursor:not-allowed; transform:none; }
 
   /* Dynamic Auto-Analyzer Badge */
   .auto-detector{
@@ -147,17 +185,6 @@
   .modal-search{ background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:10px 14px; color:var(--text); font-family:var(--mono); font-size:13px; outline:none; }
   .models-scroll-list{ overflow-y:auto; flex:1; max-height:50vh; display:flex; flex-direction:column; gap:6px; font-family:var(--mono); font-size:12px; }
   .model-list-item{ background:var(--bg-card-2); border:1px solid var(--line); padding:8px 12px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; }
-
-  /* Launch Button */
-  .btn-launch{
-    background:linear-gradient(135deg, var(--orange), #d95600);
-    color:#1a0d02; border:none; padding:14px; border-radius:12px;
-    font-family:var(--display); font-weight:700; font-size:14.5px;
-    cursor:pointer; transition:transform .15s, box-shadow .15s;
-    box-shadow:0 8px 25px rgba(255,122,26,0.3); display:flex; align-items:center; justify-content:center; gap:8px;
-  }
-  .btn-launch:hover{ transform:translateY(-2px); box-shadow:0 12px 35px rgba(255,122,26,0.45); }
-  .btn-launch:disabled{ opacity:0.5; cursor:not-allowed; transform:none; }
 
   /* System Configuration & Resource Box */
   .sys-box{
@@ -308,7 +335,7 @@
 <header>
   <div class="brand">
     <div class="brand-mark">🎬</div>
-    <div class="brand-title">Bharat Studio <span>| Local Workspace</span></div>
+    <div class="brand-title">Bharat Studio <span>| Interactive Studio</span></div>
   </div>
   <div class="header-status">
     <div class="status-badge">
@@ -324,18 +351,40 @@
 <!-- Main 3-Column Container -->
 <div class="studio-container">
 
-  <!-- Left Column: Input & Controls & System Stats -->
+  <!-- Left Column: Interactive Chat & Controls -->
   <div class="left-column">
 
     <div class="panel-input">
-      <div class="panel-title">✍️ Describe Video Requirement</div>
+      <div class="panel-title">
+        <span>💬 Interactive Story Architect</span>
+        <span style="font-size:11px; font-family:var(--mono); color:var(--orange-2);">Advisor Mode</span>
+      </div>
 
+      <!-- Chat Thread Container -->
+      <div class="chat-thread-container" id="chatThread">
+        <div class="chat-msg assistant">
+          <span class="chat-sender">🤖 AI Story Architect</span>
+          <div class="chat-bubble">👋 Hello! Describe your initial video idea or topic below. We can discuss and refine the concept interactively until you're 100% satisfied!</div>
+        </div>
+      </div>
+
+      <!-- Input Box -->
       <div class="prompt-box-wrap">
         <div class="prompt-label">
-          <span>Your Requirement Prompt:</span>
-          <span class="prompt-hint">↵ Enter to Launch · Shift+↵ Newline</span>
+          <span>Discuss or Refine Requirement:</span>
+          <span class="prompt-hint">↵ Enter to Discuss · Shift+↵ Newline</span>
         </div>
-        <textarea id="promptInput" class="prompt-input" placeholder="e.g. Create a Hindi kids story about Chintu and Meena discovering a magical glowing tree in the forest of Sundarvan..."></textarea>
+        <textarea id="promptInput" class="prompt-input" placeholder="e.g. I want a story about Chintu finding a magic key in Sundarvan forest. What moral should we add?"></textarea>
+      </div>
+
+      <!-- Dual Action Buttons: Send vs Approve -->
+      <div class="action-btn-row">
+        <button id="btnChatSend" class="btn-chat-send">
+          💬 Send & Refine
+        </button>
+        <button id="btnLaunch" class="btn-launch">
+          ✅ Approve & Launch 🚀
+        </button>
       </div>
 
       <!-- Live Auto Analyzer -->
@@ -432,9 +481,6 @@
         </div>
       </div>
 
-      <button id="btnLaunch" class="btn-launch">
-        🚀 Launch 7-Agent Pipeline (or press Enter)
-      </button>
     </div>
 
     <!-- Universal Hardware Auto-Detector & System Resource Box -->
@@ -525,7 +571,7 @@
         <span id="logCounter">0 logs</span>
       </div>
       <div class="terminal-body" id="terminalBody">
-        <div class="log-line"><span class="agent-tag">[SYSTEM]</span> Studio Console Ready. Waiting for requirement prompt...</div>
+        <div class="log-line"><span class="agent-tag">[SYSTEM]</span> Studio Console Ready. Brainstorm in chat or click Approve...</div>
       </div>
     </div>
 
@@ -544,7 +590,7 @@
     <div class="review-card active" id="tab1">
       <h3 style="font-family:var(--display); margin-bottom:12px;">📋 Agent 1: Story Topic Concept</h3>
       <div id="topicContent" style="font-size:14px; line-height:1.7; color:var(--text-dim);">
-        <p>No pipeline run started yet. Submit a prompt to view Agent 1's story concept plan.</p>
+        <p>No pipeline run started yet. Brainstorm with the AI Advisor and click Approve to generate Agent 1's story concept plan.</p>
       </div>
     </div>
 
@@ -711,13 +757,82 @@
   for(let i=0; i<300; i++) gText += glyphs[Math.floor(Math.random()*glyphs.length)] + " ";
   glyphEl.textContent = gText;
 
+  // Interactive Advisor Chat System
+  const chatThread = document.getElementById('chatThread');
+  const promptInput = document.getElementById('promptInput');
+  const btnChatSend = document.getElementById('btnChatSend');
+  const btnLaunch = document.getElementById('btnLaunch');
+  const llmSelect = document.getElementById('llmSelect');
+  const fallbackSelect = document.getElementById('fallbackSelect');
+  const customComboInput = document.getElementById('customComboInput');
+
+  let chatHistory = [];
+
+  function appendChatMessage(role, text, resolvedModel){
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `chat-msg ${role}`;
+    const senderName = role === 'user' ? '👤 You' : `🤖 AI Story Architect ${resolvedModel ? `[${resolvedModel}]` : ''}`;
+    msgDiv.innerHTML = `
+      <span class="chat-sender">${senderName}</span>
+      <div class="chat-bubble">${text}</div>
+    `;
+    chatThread.appendChild(msgDiv);
+    chatThread.scrollTop = chatThread.scrollHeight;
+  }
+
+  async function sendChatMessage(){
+    const text = promptInput.value.trim();
+    if(!text) return;
+
+    appendChatMessage('user', text);
+    chatHistory.push({ role: 'user', content: text });
+    promptInput.value = '';
+
+    const customCombo = customComboInput.value.trim();
+    const primaryLLM = customCombo || llmSelect.value;
+    const fallbackLLM = fallbackSelect.value;
+
+    btnChatSend.disabled = true;
+    btnChatSend.textContent = "Brainstorming...";
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          messages: chatHistory,
+          primary_llm: primaryLLM,
+          fallback_llm: fallbackLLM
+        })
+      });
+      const data = await res.json();
+      if(data.reply){
+        appendChatMessage('assistant', data.reply, data.resolved_model);
+        chatHistory.push({ role: 'assistant', content: data.reply });
+      }
+    } catch(e) {
+      appendChatMessage('assistant', "⚠️ Chat error. Please check server.");
+    } finally {
+      btnChatSend.disabled = false;
+      btnChatSend.textContent = "💬 Send & Refine";
+    }
+  }
+
+  btnChatSend.addEventListener('click', sendChatMessage);
+
+  // Handle Enter key for sending chat (Shift+Enter for newline)
+  promptInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendChatMessage();
+    }
+  });
+
   // Real-time OmniRoute Live Combos Auto-Fetcher
   async function fetchOmniRouteCombos(){
     try {
       const res = await fetch('/api/omniroute_models');
       const d = await res.json();
-      const llmSelect = document.getElementById('llmSelect');
-      const fallbackSelect = document.getElementById('fallbackSelect');
       const combosList = document.getElementById('combosList');
 
       let optionsHtml = "";
@@ -823,11 +938,6 @@
     `).join('');
   }
 
-  // Dynamic Agent Model Matrix update when user selects Primary/Fallback or Custom
-  const llmSelect = document.getElementById('llmSelect');
-  const fallbackSelect = document.getElementById('fallbackSelect');
-  const customComboInput = document.getElementById('customComboInput');
-
   function updateModelMatrix(){
     const custom = customComboInput.value.trim();
     const primary = custom || llmSelect.value;
@@ -914,52 +1024,6 @@
     });
   });
 
-  // Debounced Auto-Analyzer on prompt input
-  const promptInput = document.getElementById('promptInput');
-  const detectorTags = document.getElementById('detectorTags');
-  const detectorStatus = document.getElementById('detectorStatus');
-  let debounceTimer;
-
-  // Handle Enter key for quick submit (Shift+Enter for newline)
-  promptInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      document.getElementById('btnLaunch').click();
-    }
-  });
-
-  promptInput.addEventListener('input', () => {
-    clearTimeout(debounceTimer);
-    detectorStatus.textContent = "Analyzing...";
-    debounceTimer = setTimeout(async () => {
-      const val = promptInput.value.trim();
-      if(!val){
-        detectorStatus.textContent = "Ready";
-        return;
-      }
-      try {
-        const res = await fetch('/api/analyze', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ prompt: val })
-        });
-        const d = await res.json();
-        if(d.analysis){
-          detectorStatus.textContent = "Detected";
-          const a = d.analysis;
-          detectorTags.innerHTML = `
-            <span class="tag">${a.content_type}</span>
-            <span class="tag">${a.language}</span>
-            <span class="tag">${a.music_genre}</span>
-            <span class="tag">${a.image_style}</span>
-          `;
-        }
-      } catch(e) {
-        detectorStatus.textContent = "Ready";
-      }
-    }, 400);
-  });
-
   // Terminal logging helper
   const terminalBody = document.getElementById('terminalBody');
   const logCounter = document.getElementById('logCounter');
@@ -975,20 +1039,21 @@
     terminalBody.scrollTop = terminalBody.scrollHeight;
   }
 
-  // Pipeline Execution via SSE
-  const btnLaunch = document.getElementById('btnLaunch');
+  // Pipeline Execution via SSE when user clicks Approve & Launch
   const activeAgentChip = document.getElementById('activeAgentChip');
 
   btnLaunch.addEventListener('click', () => {
-    const prompt = promptInput.value.trim();
-    if(!prompt){
-      alert("Please enter a video requirement prompt!");
+    // Collect full conversation history or current text as approved prompt
+    let approvedPrompt = chatHistory.length > 0 ? chatHistory.map(m => `${m.role}: ${m.content}`).join("\n") : promptInput.value.trim();
+
+    if(!approvedPrompt){
+      alert("Please brainstorm a topic in the chat or enter a requirement first!");
       return;
     }
 
     btnLaunch.disabled = true;
-    activeAgentChip.textContent = "State: Running Pipeline";
-    activeAgentChip.style.color = "var(--orange-2)";
+    activeAgentChip.textContent = "State: Running Approved Pipeline";
+    activeAgentChip.style.color = "var(--green)";
 
     // Reset stepper
     for(let i=1; i<=7; i++){
@@ -996,7 +1061,7 @@
       el.className = 'agent-step';
     }
 
-    appendLog(0, `Starting pipeline run for prompt: "${prompt}"`);
+    appendLog(0, `Starting pipeline run for approved story concept!`);
 
     const lang = document.getElementById('langSelect').value;
     const fmt = document.getElementById('formatSelect').value;
@@ -1006,7 +1071,7 @@
     const primaryLLM = customCombo || llmSelect.value;
     const fallbackLLM = fallbackSelect.value;
 
-    const sseUrl = `/api/pipeline/stream?prompt=${encodeURIComponent(prompt)}&language=${lang}&format=${fmt}&duration=${dur}&llm_mode=${encodeURIComponent(primaryLLM)}&fallback_mode=${encodeURIComponent(fallbackLLM)}`;
+    const sseUrl = `/api/pipeline/stream?prompt=${encodeURIComponent(approvedPrompt)}&language=${lang}&format=${fmt}&duration=${dur}&llm_mode=${encodeURIComponent(primaryLLM)}&fallback_mode=${encodeURIComponent(fallbackLLM)}`;
     const eventSource = new EventSource(sseUrl);
 
     eventSource.addEventListener('status', (e) => {

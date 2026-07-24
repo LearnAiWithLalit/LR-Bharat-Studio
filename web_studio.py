@@ -3,6 +3,7 @@
 web_studio.py — Local Web Studio Server & Interactive Dashboard
 Serves the local web interface on http://localhost:8080.
 Features:
+  - Interactive AI Story Architect Chat (/api/chat) for human-in-the-loop discussion.
   - Combo Router: Primary + Secondary Combo Fallback Chain & Exact Resolved Model Metadata.
   - Live OmniRoute 280+ Models Inspector (/api/omniroute_all_models).
   - Universal Hardware Auto-Detector: Auto-fetches AMD (ROCm), NVIDIA (CUDA), Intel (XPU), & CPU info.
@@ -353,6 +354,54 @@ async def analyze_prompt(request: Request):
 
     config = analyze_content(prompt, language=lang, fmt=fmt)
     return {"status": "success", "analysis": config}
+
+
+@app.post("/api/chat")
+async def interactive_brainstorm_chat(request: Request):
+    """
+    Interactive Story Architect Advisor Chat endpoint.
+    Allows user to discuss & refine story concepts with AI until satisfied,
+    before approving for full 7-agent video pipeline execution.
+    """
+    data = await request.json()
+    messages = data.get("messages", [])
+    primary_llm = data.get("primary_llm", "auto/claude/opus")
+    fallback_llm = data.get("fallback_llm", "auto/claude")
+
+    system_prompt = (
+        "You are the Lead Story Architect & Creative Advisor for LR-Bharat-Studio.\n"
+        "Your role is to brainstorm interactively with the user to design the perfect video concept.\n"
+        "Rules:\n"
+        "1. Be encouraging, concise, and structured (use 2-3 short bullet points).\n"
+        "2. Provide 2-3 creative direction options (e.g. plot twist, character roles, visual setting).\n"
+        "3. Ask the user if they'd like to adjust anything, or if they are 100% satisfied and ready to click 'Approve & Launch Pipeline'."
+    )
+
+    if not messages:
+        return {"reply": "Hello! I am your AI Story Architect. What kind of story or video topic would you like to brainstorm today?"}
+
+    full_prompt = "\n".join([f"{m['role'].capitalize()}: {m['content']}" for m in messages])
+
+    try:
+        reply_text, resolved_model, backend_used = call_llm(
+            full_prompt,
+            system_prompt=system_prompt,
+            mode=primary_llm,
+            fallback_mode=fallback_llm,
+            return_meta=True
+        )
+        return {
+            "status": "success",
+            "reply": reply_text,
+            "resolved_model": resolved_model,
+            "backend_used": backend_used
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "reply": f"⚠️ Story Architect error: {str(e)}",
+            "resolved_model": "Fallback"
+        }
 
 
 @app.get("/api/pipeline/stream")
