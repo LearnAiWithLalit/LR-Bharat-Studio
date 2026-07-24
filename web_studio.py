@@ -194,24 +194,36 @@ def get_gpu_info() -> dict:
 @app.get("/api/omniroute_models")
 def get_omniroute_models():
     """
-    Fetches live models & user-created Combos directly from OmniRoute (http://localhost:20128/v1/models).
-    Returns ONLY genuine user combos and connected provider models.
+    Fetches live user-created Combos directly from OmniRoute (/v1/combos)
+    and connected Gemini / Provider models (/v1/models).
     """
-    url = "http://localhost:20128/v1/models"
+    combos_url = "http://localhost:20128/v1/combos"
+    models_url = "http://localhost:20128/v1/models"
     user_combos = []
     gemini_combos = []
 
+    # 1. Fetch exact user-created combos from /v1/combos
     try:
-        req = urllib.request.Request(url, headers={"Authorization": f"Bearer {OMNIROUTE_KEY}"})
+        req = urllib.request.Request(combos_url, headers={"Authorization": f"Bearer {OMNIROUTE_KEY}"})
         with urllib.request.urlopen(req, timeout=2.5) as resp:
             if resp.status == 200:
                 data = json.loads(resp.read().decode())
-                models = data.get("data", [])
-                for m in models:
+                for c in data.get("data", []):
+                    c_name = c.get("name")
+                    if c_name:
+                        user_combos.append({"id": c_name, "name": f"Combo: {c_name}", "type": "user_combo"})
+    except Exception:
+        pass
+
+    # 2. Fetch connected Gemini models from /v1/models
+    try:
+        req = urllib.request.Request(models_url, headers={"Authorization": f"Bearer {OMNIROUTE_KEY}"})
+        with urllib.request.urlopen(req, timeout=2.5) as resp:
+            if resp.status == 200:
+                data = json.loads(resp.read().decode())
+                for m in data.get("data", []):
                     m_id = m.get("id", "")
-                    if m_id.startswith("auto/") or m_id.startswith("my-") or "combo" in m_id.lower():
-                        user_combos.append({"id": m_id, "name": f"Combo: {m_id}", "type": "combo"})
-                    elif "gemini" in m_id.lower():
+                    if "gemini" in m_id.lower() and not any(c["id"] == m_id for c in user_combos):
                         gemini_combos.append({"id": m_id, "name": f"Gemini: {m_id}", "type": "gemini"})
     except Exception:
         pass
