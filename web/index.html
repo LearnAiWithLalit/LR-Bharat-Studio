@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LR-Bharat-Studio — Local Interactive Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0a09;
+    --bg-card:#141210;
+    --bg-card-2:#19170f;
+    --line:#2a2620;
+    --orange:#ff7a1a;
+    --orange-2:#ffb066;
+    --green:#28c840;
+    --text:#f5f1ea;
+    --text-dim:#a89f8f;
+    --text-faint:#6b6355;
+    --mono:'JetBrains Mono', monospace;
+    --display:'Space Grotesk', sans-serif;
+    --body:'Inter', sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{ height:100%; background:var(--bg); color:var(--text); font-family:var(--body); overflow-x:hidden; }
+
+  /* Devanagari background watermark */
+  .glyph-bg{
+    position:fixed; top:0; bottom:0; width:100%;
+    font-family:var(--mono); font-size:14px; line-height:24px;
+    color:var(--orange); opacity:0.04; pointer-events:none; z-index:0;
+    white-space:pre-wrap; overflow:hidden;
+  }
+
+  /* Header */
+  header{
+    position:sticky; top:0; z-index:100;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 24px; background:rgba(11,10,9,0.92);
+    backdrop-filter:blur(12px); border-bottom:1px solid var(--line);
+  }
+  .brand{ display:flex; align-items:center; gap:12px; }
+  .brand-mark{
+    width:36px; height:36px; border-radius:10px;
+    background:linear-gradient(135deg, var(--orange), #c9480a);
+    display:flex; align-items:center; justify-content:center; font-size:18px;
+    box-shadow:0 0 15px rgba(255,122,26,0.3);
+  }
+  .brand-title{ font-family:var(--display); font-weight:700; font-size:18px; }
+  .brand-title span{ color:var(--orange); }
+
+  .header-status{ display:flex; align-items:center; gap:16px; font-family:var(--mono); font-size:13px; }
+  .status-badge{
+    display:flex; align-items:center; gap:8px;
+    background:var(--bg-card); border:1px solid var(--line);
+    padding:6px 14px; border-radius:999px; color:var(--text-dim);
+  }
+  .dot-green{ width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); }
+  .dot-orange{ width:8px; height:8px; border-radius:50%; background:var(--orange); box-shadow:0 0 8px var(--orange); animation:pulse 1s infinite; }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+  /* Main Studio Layout */
+  .studio-container{
+    display:grid; grid-template-columns:420px 1fr; gap:24px;
+    max-width:1600px; margin:0 auto; padding:24px; min-height:calc(100vh - 70px);
+    position:relative; z-index:10;
+  }
+
+  /* Left Panel: Input & Requirements Studio */
+  .panel-input{
+    background:var(--bg-card); border:1px solid var(--line);
+    border-radius:16px; padding:24px; display:flex; flex-direction:column; gap:20px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.5); height:fit-content;
+  }
+  .panel-title{ font-family:var(--display); font-size:17px; font-weight:600; display:flex; align-items:center; gap:8px; }
+
+  .prompt-box-wrap{ display:flex; flex-direction:column; gap:8px; }
+  .prompt-label{ font-size:13px; font-weight:500; color:var(--text-dim); }
+  textarea.prompt-input{
+    width:100%; height:130px; background:var(--bg); border:1px solid var(--line);
+    border-radius:12px; padding:14px; color:var(--text); font-family:var(--body);
+    font-size:14px; line-height:1.6; resize:none; outline:none;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  textarea.prompt-input:focus{ border-color:var(--orange); box-shadow:0 0 12px rgba(255,122,26,0.2); }
+
+  /* Dynamic Auto-Analyzer Badge */
+  .auto-detector{
+    background:var(--bg-card-2); border:1px solid var(--line); border-radius:10px;
+    padding:12px; font-family:var(--mono); font-size:12px; display:flex; flex-direction:column; gap:6px;
+  }
+  .detector-header{ color:var(--orange-2); font-weight:600; display:flex; justify-content:space-between; }
+  .detector-tags{ display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
+  .tag{
+    background:rgba(255,122,26,0.12); border:1px solid rgba(255,122,26,0.3);
+    color:var(--orange-2); padding:3px 8px; border-radius:6px; font-size:11.5px;
+  }
+
+  /* Control Form Fields */
+  .form-group{ display:flex; flex-direction:column; gap:6px; }
+  .form-label{ font-size:13px; color:var(--text-dim); font-weight:500; }
+  select.form-select, input.form-input{
+    background:var(--bg); border:1px solid var(--line); border-radius:8px;
+    padding:10px 12px; color:var(--text); font-family:var(--body); font-size:13.5px; outline:none;
+  }
+  select.form-select:focus{ border-color:var(--orange); }
+
+  .form-row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+  /* Cast Selection Chips */
+  .cast-chips{ display:flex; flex-wrap:wrap; gap:6px; }
+  .chip{
+    background:var(--bg); border:1px solid var(--line); padding:6px 12px;
+    border-radius:8px; font-size:12px; cursor:pointer; user-select:none;
+    transition:all .15s; display:flex; align-items:center; gap:6px;
+  }
+  .chip.selected{ background:rgba(255,122,26,0.2); border-color:var(--orange); color:var(--orange-2); }
+
+  /* Launch Button */
+  .btn-launch{
+    background:linear-gradient(135deg, var(--orange), #d95600);
+    color:#1a0d02; border:none; padding:15px; border-radius:12px;
+    font-family:var(--display); font-weight:700; font-size:15px;
+    cursor:pointer; transition:transform .15s, box-shadow .15s;
+    box-shadow:0 8px 25px rgba(255,122,26,0.3); display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .btn-launch:hover{ transform:translateY(-2px); box-shadow:0 12px 35px rgba(255,122,26,0.45); }
+  .btn-launch:disabled{ opacity:0.5; cursor:not-allowed; transform:none; }
+
+  /* Right Workspace: Live Execution & Step Reviews */
+  .panel-workspace{ display:flex; flex-direction:column; gap:20px; }
+
+  /* 7-Agent Stepper Visualizer */
+  .stepper-bar{
+    background:var(--bg-card); border:1px solid var(--line);
+    border-radius:16px; padding:18px 24px; display:grid; grid-template-columns:repeat(7, 1fr); gap:8px;
+  }
+  .agent-step{
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    text-align:center; position:relative; cursor:pointer; opacity:0.5; transition:all .2s;
+  }
+  .agent-step.active{ opacity:1; }
+  .agent-step.running .step-icon{ border-color:var(--orange); background:rgba(255,122,26,0.2); color:var(--orange); box-shadow:0 0 15px rgba(255,122,26,0.4); animation:pulse 1s infinite; }
+  .agent-step.completed .step-icon{ border-color:var(--green); background:rgba(40,200,64,0.2); color:var(--green); }
+  .step-icon{
+    width:38px; height:38px; border-radius:10px; background:var(--bg-card-2);
+    border:1px solid var(--line); display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-weight:600; font-size:13px;
+  }
+  .step-name{ font-size:11.5px; font-weight:500; color:var(--text-dim); }
+
+  /* Terminal Log Console */
+  .terminal-box{
+    background:#080706; border:1px solid var(--line); border-radius:14px;
+    overflow:hidden; font-family:var(--mono); font-size:12.5px;
+  }
+  .terminal-header{
+    background:var(--bg-card-2); border-bottom:1px solid var(--line);
+    padding:10px 16px; display:flex; align-items:center; justify-content:space-between;
+    color:var(--text-faint); font-size:12px;
+  }
+  .terminal-body{
+    padding:14px 18px; height:140px; overflow-y:auto; line-height:1.7;
+    color:var(--text-dim);
+  }
+  .log-line{ display:flex; gap:10px; }
+  .log-line .agent-tag{ color:var(--orange-2); flex-shrink:0; }
+
+  /* Workspace Review Tabs */
+  .tabs-header{ display:flex; gap:8px; border-bottom:1px solid var(--line); padding-bottom:10px; }
+  .tab-btn{
+    background:var(--bg-card); border:1px solid var(--line); color:var(--text-dim);
+    padding:10px 18px; border-radius:10px; font-size:13.5px; font-weight:500;
+    cursor:pointer; transition:all .15s; display:flex; align-items:center; gap:8px;
+  }
+  .tab-btn.active{ background:rgba(255,122,26,0.15); border-color:var(--orange); color:var(--orange-2); }
+
+  /* Review Cards Content */
+  .review-card{
+    background:var(--bg-card); border:1px solid var(--line);
+    border-radius:16px; padding:24px; min-height:350px; display:none;
+  }
+  .review-card.active{ display:block; }
+
+  /* Script Review Format */
+  .dialogue-item{
+    background:var(--bg); border:1px solid var(--line); border-radius:10px;
+    padding:14px; margin-bottom:10px; display:flex; flex-direction:column; gap:6px;
+  }
+  .speaker-badge{
+    display:inline-flex; align-items:center; gap:6px; background:rgba(255,122,26,0.15);
+    color:var(--orange-2); padding:3px 10px; border-radius:6px; font-weight:600; font-size:12px; width:fit-content;
+  }
+  .dialogue-text{ font-size:14.5px; line-height:1.5; color:var(--text); }
+
+  /* Audio Preview Format */
+  .audio-player-wrap{
+    background:var(--bg-card-2); border:1px solid var(--line); border-radius:12px;
+    padding:20px; display:flex; flex-direction:column; gap:16px; margin-bottom:20px;
+  }
+  audio{ width:100%; }
+
+  /* Image Gallery Format */
+  .image-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:16px; }
+  .image-card{
+    background:var(--bg); border:1px solid var(--line); border-radius:12px;
+    overflow:hidden; transition:transform .15s; position:relative;
+  }
+  .image-card:hover{ transform:scale(1.02); border-color:var(--orange); }
+  .image-card img{ width:100%; height:140px; object-fit:cover; display:block; }
+  .image-card .img-caption{ padding:8px 12px; font-size:11.5px; color:var(--text-dim); font-family:var(--mono); }
+
+  /* Video Preview */
+  .video-player-wrap{ background:#000; border-radius:12px; overflow:hidden; border:1px solid var(--line); }
+  video{ width:100%; max-height:480px; display:block; }
+
+  @media(max-width:1100px){
+    .studio-container{ grid-template-columns:1fr; }
+    .stepper-bar{ grid-template-columns:repeat(4, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="glyph-bg" id="glyphBg"></div>
+
+<!-- Header -->
+<header>
+  <div class="brand">
+    <div class="brand-mark">🎬</div>
+    <div class="brand-title">Bharat Studio <span>| Local Workspace</span></div>
+  </div>
+  <div class="header-status">
+    <div class="status-badge">
+      <div class="dot-green" id="serverDot"></div>
+      <span id="serverText">Server Ready (port 8080)</span>
+    </div>
+    <div class="status-badge">
+      <span id="activeAgentChip">State: Idle</span>
+    </div>
+  </div>
+</header>
+
+<!-- Main Container -->
+<div class="studio-container">
+
+  <!-- Left Column: Input & Controls -->
+  <div class="panel-input">
+    <div class="panel-title">✍️ Describe Video Requirement</div>
+
+    <div class="prompt-box-wrap">
+      <div class="prompt-label">Your Requirement Prompt:</div>
+      <textarea id="promptInput" class="prompt-input" placeholder="e.g. Create a Hindi kids story about Chintu and Meena discovering a magical glowing tree in the forest of Sundarvan..."></textarea>
+    </div>
+
+    <!-- Live Auto Analyzer -->
+    <div class="auto-detector">
+      <div class="detector-header">
+        <span>🧠 Smart Pre-Analysis</span>
+        <span id="detectorStatus">Ready</span>
+      </div>
+      <div class="detector-tags" id="detectorTags">
+        <span class="tag">kids_story</span>
+        <span class="tag">Hindi</span>
+        <span class="tag">mystical_forest</span>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="form-row">
+      <div class="form-group">
+        <div class="form-label">Language:</div>
+        <select id="langSelect" class="form-select">
+          <option value="auto">Auto-detect</option>
+          <option value="Hindi" selected>Hindi</option>
+          <option value="English">English</option>
+          <option value="Both">Both (Hinglish)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <div class="form-label">Output Format:</div>
+        <select id="formatSelect" class="form-select">
+          <option value="youtube_long_form" selected>YouTube Long (16:9 4K)</option>
+          <option value="youtube_shorts">YouTube Shorts (9:16 4K)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <div class="form-label">Target Duration:</div>
+        <select id="durationSelect" class="form-select">
+          <option value="1">1 minute (Short)</option>
+          <option value="3">3 minutes</option>
+          <option value="5" selected>5 minutes (Standard)</option>
+          <option value="10">10 minutes (Long)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <div class="form-label">LLM Engine:</div>
+        <select id="llmSelect" class="form-select">
+          <option value="fast" selected>OmniRoute (Fast)</option>
+          <option value="pro">OmniRoute (Pro)</option>
+          <option value="free">FreeBuff (100% Free)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Voice Cast Selection -->
+    <div class="form-group">
+      <div class="form-label">Available Voice Cast (Voice Registry):</div>
+      <div class="cast-chips">
+        <div class="chip selected" data-voice="kid_young_1">👦 Chintu (~5yr)</div>
+        <div class="chip selected" data-voice="kid_young_2">🧒 Pappu (~7yr)</div>
+        <div class="chip selected" data-voice="kid_elder_sister">👧 Meena (Elder Sister)</div>
+        <div class="chip selected" data-voice="narrator">🎙️ Narrator (Male)</div>
+      </div>
+    </div>
+
+    <button id="btnLaunch" class="btn-launch">
+      🚀 Launch 7-Agent Pipeline
+    </button>
+  </div>
+
+  <!-- Right Column: Live Pipeline & Reviews -->
+  <div class="panel-workspace">
+
+    <!-- 7-Agent Stepper -->
+    <div class="stepper-bar">
+      <div class="agent-step" id="step1">
+        <div class="step-icon">1</div>
+        <div class="step-name">Topic</div>
+      </div>
+      <div class="agent-step" id="step2">
+        <div class="step-icon">2</div>
+        <div class="step-name">Script</div>
+      </div>
+      <div class="agent-step" id="step3">
+        <div class="step-icon">3</div>
+        <div class="step-name">Config</div>
+      </div>
+      <div class="agent-step" id="step4">
+        <div class="step-icon">4</div>
+        <div class="step-name">Audio</div>
+      </div>
+      <div class="agent-step" id="step5">
+        <div class="step-icon">5</div>
+        <div class="step-name">QA</div>
+      </div>
+      <div class="agent-step" id="step6">
+        <div class="step-icon">6</div>
+        <div class="step-name">Images</div>
+      </div>
+      <div class="agent-step" id="step7">
+        <div class="step-icon">7</div>
+        <div class="step-name">Video</div>
+      </div>
+    </div>
+
+    <!-- Live Terminal Box -->
+    <div class="terminal-box">
+      <div class="terminal-header">
+        <span>CONSOLE OUTPUT</span>
+        <span id="logCounter">0 logs</span>
+      </div>
+      <div class="terminal-body" id="terminalBody">
+        <div class="log-line"><span class="agent-tag">[SYSTEM]</span> Studio Console Ready. Waiting for requirement prompt...</div>
+      </div>
+    </div>
+
+    <!-- Step Review Tabs -->
+    <div class="tabs-header">
+      <button class="tab-btn active" data-tab="tab1">📋 Topic Plan</button>
+      <button class="tab-btn" data-tab="tab2">✍️ Script Review</button>
+      <button class="tab-btn" data-tab="tab3">⚙️ Config</button>
+      <button class="tab-btn" data-tab="tab4">🎙️ Audio & QA</button>
+      <button class="tab-btn" data-tab="tab5">🖼️ 4K Scene Images</button>
+      <button class="tab-btn" data-tab="tab6">🎬 Final Video</button>
+    </div>
+
+    <!-- Review Content Cards -->
+    <!-- Tab 1: Topic Plan -->
+    <div class="review-card active" id="tab1">
+      <h3 style="font-family:var(--display); margin-bottom:12px;">📋 Agent 1: Story Topic Concept</h3>
+      <div id="topicContent" style="font-size:14px; line-height:1.7; color:var(--text-dim);">
+        <p>No pipeline run started yet. Submit a prompt to view Agent 1's story concept plan.</p>
+      </div>
+    </div>
+
+    <!-- Tab 2: Script -->
+    <div class="review-card" id="tab2">
+      <h3 style="font-family:var(--display); margin-bottom:12px;">✍️ Agent 2: Narration Script</h3>
+      <div id="scriptContent">
+        <p style="color:var(--text-dim);">Generated character dialogues and scene prompts will appear here after Agent 2 completes.</p>
+      </div>
+    </div>
+
+    <!-- Tab 3: Config -->
+    <div class="review-card" id="tab3">
+      <h3 style="font-family:var(--display); margin-bottom:12px;">⚙️ Agent 3: Story Configuration</h3>
+      <pre id="configContent" style="font-family:var(--mono); font-size:13px; color:var(--orange-2); background:var(--bg); padding:16px; border-radius:10px; overflow-x:auto;">{}</pre>
+    </div>
+
+    <!-- Tab 4: Audio & QA -->
+    <div class="review-card" id="tab4">
+      <h3 style="font-family:var(--display); margin-bottom:12px;">🎙️ Agent 4 & 5: Audio Master & QA Inspection</h3>
+      <div class="audio-player-wrap">
+        <div style="font-size:14px; font-weight:600;">Master Audio Mix (Chatterbox TTS + Procedural Music + Wind SFX):</div>
+        <audio id="audioMasterPlayer" controls></audio>
+      </div>
+      <div id="qaReportContent" style="font-family:var(--mono); font-size:13px; color:var(--text-dim);">
+        <p>Audio QA inspection report will display here after audio generation.</p>
+      </div>
+    </div>
+
+    <!-- Tab 5: Images -->
+    <div class="review-card" id="tab5">
+      <h3 style="font-family:var(--display); margin-bottom:12px;">🖼️ Agent 6: 4K Scene Images Gallery (Option C)</h3>
+      <div class="image-grid" id="imageGrid">
+        <p style="color:var(--text-dim);">Generated 4K scene keyframes will render here once Agent 6 completes.</p>
+      </div>
+    </div>
+
+    <!-- Tab 6: Video -->
+    <div class="review-card" id="tab6">
+      <h3 style="font-family:var(--display); margin-bottom:12px;">🎬 Agent 7: Final Rendered Video</h3>
+      <div class="video-player-wrap">
+        <video id="videoPlayer" controls poster=""></video>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Devanagari background generator
+  const glyphs = "अ आ इ ई उ ऊ ऋ ए ऐ ओ औ क ख ग घ च छ ज झ ट ठ ड ढ त थ द ध न प फ ब भ म य र ल व श ष स ह".split(" ");
+  const glyphEl = document.getElementById('glyphBg');
+  let gText = "";
+  for(let i=0; i<300; i++) gText += glyphs[Math.floor(Math.random()*glyphs.length)] + " ";
+  glyphEl.textContent = gText;
+
+  // Tab switching
+  const tabs = document.querySelectorAll('.tab-btn');
+  tabs.forEach(t => {
+    t.addEventListener('click', () => {
+      tabs.forEach(x => x.classList.remove('active'));
+      document.querySelectorAll('.review-card').forEach(c => c.classList.remove('active'));
+      t.classList.add('active');
+      document.getElementById(t.dataset.tab).classList.add('active');
+    });
+  });
+
+  // Debounced Auto-Analyzer on prompt input
+  const promptInput = document.getElementById('promptInput');
+  const detectorTags = document.getElementById('detectorTags');
+  const detectorStatus = document.getElementById('detectorStatus');
+  let debounceTimer;
+
+  promptInput.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    detectorStatus.textContent = "Analyzing...";
+    debounceTimer = setTimeout(async () => {
+      const val = promptInput.value.trim();
+      if(!val){
+        detectorStatus.textContent = "Ready";
+        return;
+      }
+      try {
+        const res = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ prompt: val })
+        });
+        const d = await res.json();
+        if(d.analysis){
+          detectorStatus.textContent = "Detected";
+          const a = d.analysis;
+          detectorTags.innerHTML = `
+            <span class="tag">${a.content_type}</span>
+            <span class="tag">${a.language}</span>
+            <span class="tag">${a.music_genre}</span>
+            <span class="tag">${a.image_style}</span>
+          `;
+        }
+      } catch(e) {
+        detectorStatus.textContent = "Ready";
+      }
+    }, 400);
+  });
+
+  // Terminal logging helper
+  const terminalBody = document.getElementById('terminalBody');
+  const logCounter = document.getElementById('logCounter');
+  let count = 0;
+
+  function appendLog(agent, text){
+    count++;
+    logCounter.textContent = `${count} logs`;
+    const line = document.createElement('div');
+    line.className = 'log-line';
+    line.innerHTML = `<span class="agent-tag">[Agent ${agent}]</span> <span>${text}</span>`;
+    terminalBody.appendChild(line);
+    terminalBody.scrollTop = terminalBody.scrollHeight;
+  }
+
+  // Pipeline Execution via SSE
+  const btnLaunch = document.getElementById('btnLaunch');
+  const activeAgentChip = document.getElementById('activeAgentChip');
+
+  btnLaunch.addEventListener('click', () => {
+    const prompt = promptInput.value.trim();
+    if(!prompt){
+      alert("Please enter a video requirement prompt!");
+      return;
+    }
+
+    btnLaunch.disabled = true;
+    activeAgentChip.textContent = "State: Running Pipeline";
+    activeAgentChip.style.color = "var(--orange-2)";
+
+    // Reset stepper
+    for(let i=1; i<=7; i++){
+      const el = document.getElementById('step' + i);
+      el.className = 'agent-step';
+    }
+
+    appendLog(0, `Starting pipeline run for prompt: "${prompt}"`);
+
+    const lang = document.getElementById('langSelect').value;
+    const fmt = document.getElementById('formatSelect').value;
+    const dur = document.getElementById('durationSelect').value;
+    const llm = document.getElementById('llmSelect').value;
+
+    const sseUrl = `/api/pipeline/stream?prompt=${encodeURIComponent(prompt)}&language=${lang}&format=${fmt}&duration=${dur}&llm_mode=${llm}`;
+    const eventSource = new EventSource(sseUrl);
+
+    eventSource.addEventListener('status', (e) => {
+      const data = JSON.parse(e.data);
+      if(data.agent > 0){
+        const stepEl = document.getElementById('step' + data.agent);
+        if(stepEl){
+          document.querySelectorAll('.agent-step').forEach(s => s.classList.remove('running'));
+          stepEl.classList.add('active', 'running');
+        }
+      }
+      activeAgentChip.textContent = `State: ${data.message}`;
+    });
+
+    eventSource.addEventListener('log', (e) => {
+      const data = JSON.parse(e.data);
+      appendLog(data.agent, data.text);
+    });
+
+    eventSource.addEventListener('agent_complete', (e) => {
+      const data = JSON.parse(e.data);
+      const agentNum = data.agent;
+      const stepEl = document.getElementById('step' + agentNum);
+      if(stepEl){
+        stepEl.classList.remove('running');
+        stepEl.classList.add('active', 'completed');
+      }
+
+      // Handle Agent Specific Reviews
+      if(agentNum === 1){
+        const d = data.data;
+        document.getElementById('topicContent').innerHTML = `
+          <h4 style="color:var(--orange-2); margin-bottom:60px;">${d.title || "Untitled"}</h4>
+          <p><b>Hook:</b> ${d.hook || "N/A"}</p>
+          <p><b>Moral:</b> ${d.moral || "N/A"}</p>
+          <p><b>Setting:</b> ${d.setting_description || "N/A"}</p>
+          <h5 style="margin-top:14px; margin-bottom:6px;">Key Scenes:</h5>
+          <ul>${(d.key_scenes || []).map(s => `<li>${s}</li>`).join('')}</ul>
+        `;
+      } else if(agentNum === 2){
+        const script = data.data;
+        const scriptBox = document.getElementById('scriptContent');
+        scriptBox.innerHTML = script.map(item => `
+          <div class="dialogue-item">
+            <div class="speaker-badge">🎭 ${item.character} (${item.emotion || 'normal'})</div>
+            <div class="dialogue-text">${item.line}</div>
+            <div style="font-size:11.5px; color:var(--text-faint); font-family:var(--mono);">Scene prompt: ${item.scene_prompt || 'N/A'}</div>
+          </div>
+        `).join('');
+      } else if(agentNum === 3){
+        document.getElementById('configContent').textContent = JSON.stringify(data.data, null, 2);
+      } else if(agentNum === 4){
+        if(data.audio_url){
+          document.getElementById('audioMasterPlayer').src = data.audio_url;
+        }
+      } else if(agentNum === 5){
+        document.getElementById('qaReportContent').innerHTML = `<pre>${JSON.stringify(data.data, null, 2)}</pre>`;
+      } else if(agentNum === 6){
+        const grid = document.getElementById('imageGrid');
+        if(data.images && data.images.length > 0){
+          grid.innerHTML = data.images.map((url, idx) => `
+            <div class="image-card">
+              <img src="${url}" alt="Scene ${idx+1}">
+              <div class="img-caption">Scene ${idx+1} · 4K</div>
+            </div>
+          `).join('');
+        }
+      } else if(agentNum === 7){
+        if(data.video_url){
+          document.getElementById('videoPlayer').src = data.video_url;
+        }
+      }
+    });
+
+    eventSource.addEventListener('done', () => {
+      eventSource.close();
+      btnLaunch.disabled = false;
+      activeAgentChip.textContent = "State: Pipeline Complete 🎉";
+      activeAgentChip.style.color = "var(--green)";
+      appendLog(7, "✨ Full 7-Agent Pipeline Execution Completed!");
+    });
+
+    eventSource.onerror = () => {
+      eventSource.close();
+      btnLaunch.disabled = false;
+      activeAgentChip.textContent = "State: Idle";
+    };
+  });
+</script>
+</body>
+</html>
