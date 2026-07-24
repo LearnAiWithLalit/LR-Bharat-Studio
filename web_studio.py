@@ -3,8 +3,8 @@
 web_studio.py — Local Web Studio Server & Interactive Dashboard
 Serves the local web interface on http://localhost:8080.
 Features:
-  - Combo Router: Primary + Secondary Combo Fallback Chain (/api/pipeline/stream).
-  - Live OmniRoute Models & Combos Auto-Fetcher (/api/omniroute_models).
+  - Combo Router: Primary + Secondary Combo Fallback Chain & Exact Resolved Model Metadata.
+  - Live OmniRoute 280+ Models Inspector (/api/omniroute_all_models).
   - Universal Hardware Auto-Detector: Auto-fetches AMD (ROCm), NVIDIA (CUDA), Intel (XPU), & CPU info.
   - SSE progress streaming & media file preview.
 """
@@ -225,21 +225,59 @@ def get_omniroute_models():
     }
 
 
+@app.get("/api/omniroute_all_models")
+def get_omniroute_all_models():
+    """
+    Fetches all 280+ models live from OmniRoute for full inspection & searching.
+    """
+    url = "http://localhost:20128/v1/models"
+    all_models = []
+    total_count = 0
+
+    try:
+        req = urllib.request.Request(url, headers={"Authorization": f"Bearer {OMNIROUTE_KEY}"})
+        with urllib.request.urlopen(req, timeout=2.5) as resp:
+            if resp.status == 200:
+                data = json.loads(resp.read().decode())
+                raw_models = data.get("data", [])
+                total_count = len(raw_models)
+                for m in raw_models:
+                    m_id = m.get("id", "")
+                    owner = m.get("owned_by", "omniroute")
+                    all_models.append({
+                        "id": m_id,
+                        "owned_by": owner,
+                        "is_combo": m_id.startswith("auto/") or "_" in m_id
+                    })
+    except Exception as e:
+        pass
+
+    return {
+        "total": total_count,
+        "models": all_models
+    }
+
+
 @app.get("/api/omniroute_status")
 def check_omniroute_status():
     """Checks if OmniRoute Docker container and proxy endpoint (port 20128) are online."""
     omni_url = "http://localhost:20128/v1/models"
     dashboard_url = "http://localhost:3000"
     is_online = False
+    total_models = 0
     try:
         req = urllib.request.Request(omni_url, headers={"Authorization": f"Bearer {OMNIROUTE_KEY}"})
         with urllib.request.urlopen(req, timeout=1.5) as resp:
-            is_online = resp.status in (200, 401, 403)
+            if resp.status == 200:
+                is_online = True
+                data = json.loads(resp.read().decode())
+                total_models = len(data.get("data", []))
     except Exception:
         pass
 
     return {
         "online": is_online,
+        "total_models": total_models,
         "proxy_endpoint": "http://localhost:20128/v1",
         "dashboard_ui": dashboard_url,
         "fallback_freebuff": True,
@@ -327,7 +365,7 @@ async def stream_pipeline(
     fallback_mode: str = "auto/claude",
 ):
     """
-    SSE stream endpoint executing the 7-agent pipeline step-by-step with Primary & Fallback Combos.
+    SSE stream endpoint executing the 7-agent pipeline step-by-step with Primary & Fallback Combos & Exact Resolved Model logging.
     """
 
     async def event_generator() -> AsyncGenerator[str, None]:
@@ -352,23 +390,27 @@ async def stream_pipeline(
         yield sse("analysis_ready", {"analysis": config})
         yield sse(
             "status",
-            {"agent": 1, "status": "running", "message": f"Agent 1: Planning topic [{llm_mode}] → [{fallback_mode}]..."},
+            {"agent": 1, "status": "running", "message": f"Agent 1: Planning topic [{llm_mode}]..."},
         )
 
         # ── Step 1: Agent 1 (Topic Planner) ──────────────────────
         try:
-            yield sse("log", {"agent": 1, "text": f"Formulating story concept with Primary Combo [{llm_mode}] (Fallback: {fallback_mode})..."})
+            yield sse("log", {"agent": 1, "text": f"Requesting topic concept with Primary Combo [{llm_mode}] (Fallback: {fallback_mode})..."})
             plan_prompt = (
                 f"Create a detailed {config['content_type']} video plan for: {prompt}\n"
                 f"Language: {config['language']}, Duration: {config['target_duration_min']} min\n"
                 "Return JSON with: title, hook, moral, setting_description, key_scenes (list of strings)"
             )
-            plan_raw = call_llm(
+            
+            plan_raw, resolved_model, backend_used = call_llm(
                 plan_prompt,
                 system_prompt="You are an expert story planner. Always return valid raw JSON.",
                 mode=llm_mode,
                 fallback_mode=fallback_mode,
+                return_meta=True,
             )
+
+            yield sse("log", {"agent": 1, "text": f"🎯 Resolved to exact model: [{resolved_model}] via {backend_used}"})
 
             match = re.search(r"\{.*\}", plan_raw, re.DOTALL)
             if match:
@@ -380,6 +422,8 @@ async def stream_pipeline(
                     "moral": "Courage and kindness always win.",
                     "key_scenes": ["Scene 1: Introduction", "Scene 2: Climax", "Scene 3: Resolution"],
                 }
+
+            topic_data["resolved_model"] = resolved_model
 
             with open(
                 os.path.join(OUTPUT_DIR, "plan_topic.json"), "w", encoding="utf-8"
@@ -409,12 +453,16 @@ async def stream_pipeline(
                 f"Characters: {config['voice_cast']}\n"
                 "Return JSON array of scene objects: [{'character': string, 'line': string, 'emotion': string, 'scene_prompt': string}]"
             )
-            script_raw = call_llm(
+            
+            script_raw, resolved_model_2, backend_used_2 = call_llm(
                 script_prompt,
                 system_prompt="You are a professional children's story scriptwriter. Return raw JSON array only.",
                 mode=llm_mode if llm_mode != "fast" else "pro",
                 fallback_mode=fallback_mode,
+                return_meta=True,
             )
+
+            yield sse("log", {"agent": 2, "text": f"🎯 Resolved to exact model: [{resolved_model_2}] via {backend_used_2}"})
 
             match = re.search(r"\[\s*\{.*\}\s*\]", script_raw, re.DOTALL)
             if match:

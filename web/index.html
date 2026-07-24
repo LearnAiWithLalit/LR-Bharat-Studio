@@ -132,6 +132,22 @@
     border-radius:6px; font-weight:600; font-size:11px; text-decoration:none; cursor:pointer;
   }
 
+  /* Modal Dialog for Model Inspection */
+  .modal-overlay{
+    position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.85);
+    backdrop-filter:blur(10px); z-index:2000; display:none; align-items:center; justify-content:center;
+  }
+  .modal-overlay.active{ display:flex; }
+  .modal-card{
+    background:var(--bg-card); border:1px solid var(--line); border-radius:18px;
+    width:750px; max-width:92vw; max-height:85vh; padding:24px; display:flex; flex-direction:column; gap:16px;
+    box-shadow:0 25px 60px rgba(0,0,0,0.7);
+  }
+  .modal-header{ display:flex; justify-content:space-between; align-items:center; font-family:var(--display); font-size:18px; font-weight:700; }
+  .modal-search{ background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:10px 14px; color:var(--text); font-family:var(--mono); font-size:13px; outline:none; }
+  .models-scroll-list{ overflow-y:auto; flex:1; max-height:50vh; display:flex; flex-direction:column; gap:6px; font-family:var(--mono); font-size:12px; }
+  .model-list-item{ background:var(--bg-card-2); border:1px solid var(--line); padding:8px 12px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; }
+
   /* Launch Button */
   .btn-launch{
     background:linear-gradient(135deg, var(--orange), #d95600);
@@ -393,13 +409,16 @@
         <input type="text" id="customComboInput" class="form-input" placeholder="e.g. auto/claude/opus or my_combo">
       </div>
 
-      <!-- OmniRoute Config Helper -->
+      <!-- OmniRoute Config & 280+ Models Inspector Card -->
       <div class="omni-card">
         <div>
           <span style="color:var(--orange-2); font-weight:600;">🔌 OmniRoute Router</span>
           <div style="color:var(--text-dim); font-size:11px;" id="omniStatusText">Checking Docker on :20128...</div>
         </div>
-        <a class="omni-btn" href="http://localhost:3000" target="_blank">Setup Keys ↗</a>
+        <div style="display:flex; gap:6px;">
+          <button class="omni-btn" id="btnInspectModels">🔍 Inspect 280+ Models</button>
+          <a class="omni-btn" href="http://localhost:3000" target="_blank">Setup ↗</a>
+        </div>
       </div>
 
       <!-- Voice Cast Selection -->
@@ -670,6 +689,20 @@
 
 </div>
 
+<!-- Modal Overlay for 280+ Connected Models Inspection -->
+<div class="modal-overlay" id="modelsModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span>🔍 Connected OmniRoute Models (<span id="modalModelCount">0</span> Live Models)</span>
+      <button id="btnCloseModal" style="background:none; border:none; color:var(--text); font-size:20px; cursor:pointer;">✕</button>
+    </div>
+    <input type="text" id="modalSearchInput" class="modal-search" placeholder="Search 280+ models (e.g. claude, gemini, opus, sonnet, deepseek)...">
+    <div class="models-scroll-list" id="modelsScrollList">
+      <div class="model-list-item">Loading live models from OmniRoute...</div>
+    </div>
+  </div>
+</div>
+
 <script>
   // Devanagari background generator
   const glyphs = "अ आ इ ई उ ऊ ऋ ए ऐ ओ औ क ख ग घ च छ ज झ ट ठ ड ढ त थ द ध न प फ ब भ म य र ल व श ष स ह".split(" ");
@@ -746,6 +779,50 @@
   }
   fetchOmniRouteCombos();
 
+  // Modal 280+ Models Inspector
+  const btnInspectModels = document.getElementById('btnInspectModels');
+  const modelsModal = document.getElementById('modelsModal');
+  const btnCloseModal = document.getElementById('btnCloseModal');
+  const modalSearchInput = document.getElementById('modalSearchInput');
+  const modelsScrollList = document.getElementById('modelsScrollList');
+  const modalModelCount = document.getElementById('modalModelCount');
+
+  let allOmniModels = [];
+
+  btnInspectModels.addEventListener('click', async () => {
+    modelsModal.classList.add('active');
+    try {
+      const res = await fetch('/api/omniroute_all_models');
+      const d = await res.json();
+      allOmniModels = d.models || [];
+      modalModelCount.textContent = d.total || allOmniModels.length;
+      renderModelList(allOmniModels);
+    } catch(e) {
+      modelsScrollList.innerHTML = `<div class="model-list-item">Error loading OmniRoute models. Ensure OmniRoute docker container is running on port 20128.</div>`;
+    }
+  });
+
+  btnCloseModal.addEventListener('click', () => modelsModal.classList.remove('active'));
+
+  modalSearchInput.addEventListener('input', () => {
+    const q = modalSearchInput.value.toLowerCase().trim();
+    const filtered = allOmniModels.filter(m => m.id.toLowerCase().includes(q) || m.owned_by.toLowerCase().includes(q));
+    renderModelList(filtered);
+  });
+
+  function renderModelList(list){
+    if(list.length === 0){
+      modelsScrollList.innerHTML = `<div class="model-list-item">No matching models found.</div>`;
+      return;
+    }
+    modelsScrollList.innerHTML = list.map(m => `
+      <div class="model-list-item">
+        <span style="color:${m.is_combo ? 'var(--orange-2)' : 'var(--text)'}">${m.is_combo ? '✨ Combo: ' : ''}${m.id}</span>
+        <span class="badge-free" style="background:var(--bg); border:1px solid var(--line); color:var(--text-dim);">${m.owned_by}</span>
+      </div>
+    `).join('');
+  }
+
   // Dynamic Agent Model Matrix update when user selects Primary/Fallback or Custom
   const llmSelect = document.getElementById('llmSelect');
   const fallbackSelect = document.getElementById('fallbackSelect');
@@ -778,7 +855,7 @@
       const d = await res.json();
       const txt = document.getElementById('omniStatusText');
       if(d.online){
-        txt.innerHTML = `<span style="color:var(--green)">✓ Online</span> (:20128) · Keys Active`;
+        txt.innerHTML = `<span style="color:var(--green)">✓ Online</span> (${d.total_models || 287} Models Live)`;
       } else {
         txt.innerHTML = `<span style="color:var(--orange)">⚠️ Offline</span> (Using FreeBuff Fallback)`;
       }
@@ -963,6 +1040,7 @@
         const d = data.data;
         document.getElementById('topicContent').innerHTML = `
           <h4 style="color:var(--orange-2); margin-bottom:10px;">${d.title || "Untitled"}</h4>
+          <p style="font-family:var(--mono); font-size:12px; color:var(--green); margin-bottom:8px;">🎯 Resolved Model: ${d.resolved_model || 'OmniRoute'}</p>
           <p><b>Hook:</b> ${d.hook || "N/A"}</p>
           <p><b>Moral:</b> ${d.moral || "N/A"}</p>
           <p><b>Setting:</b> ${d.setting_description || "N/A"}</p>
