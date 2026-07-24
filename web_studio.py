@@ -23,6 +23,8 @@ from typing import AsyncGenerator
 
 import psutil
 import uvicorn
+import edge_tts
+from PIL import Image, ImageDraw
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, StreamingResponse
