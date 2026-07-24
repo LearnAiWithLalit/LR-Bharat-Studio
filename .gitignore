@@ -1,0 +1,84 @@
+# =============================================================
+# .gitignore — LR-Bharat-Studio
+# Keep the repo lean: no large audio/video/model files
+# =============================================================
+
+# ── Generated outputs (too large for git) ──────────────────
+output/audio/*.wav
+output/audio/*.mp3
+output/video/*.mp4
+output/video/*.mov
+output/images/*.png
+output/images/*.jpg
+output/images/*.webp
+output/qa_reports/*.json
+
+# ── Keep folder structure (placeholder files) ──────────────
+!output/audio/.gitkeep
+!output/video/.gitkeep
+!output/images/.gitkeep
+!output/qa_reports/.gitkeep
+!output/plans/.gitkeep
+
+# ── Reference voice clips (copyright, personal recordings) ──
+core/voice_registry/*.wav
+core/voice_registry/*.mp3
+!core/voice_registry/README.md      # Instructions on which clips to place here
+
+# ── Music / SFX libraries ───────────────────────────────────
+core/music_library/generated/*.wav
+core/music_library/generated/*.mp3
+core/sfx_library/generated/*.wav
+
+# ── API keys and secrets ────────────────────────────────────
+config/config.yaml                  # Use config.yaml.example as template
+.env
+*.env
+*_secret*
+*_key*
+
+# ── OmniRoute runtime data (logs / db state) ────────────────
+tools/omniroute/logs/
+tools/omniroute/config/db.sqlite
+tools/omniroute/config/*.json
+
+# ── FreeBuff node binary (too large) ───────────────────────
+tools/freebuff/node
+tools/freebuff/node-linux/
+
+# ── Python cache ────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── ML model weights (never commit) ─────────────────────────
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.onnx
+*.bin
+models/
+
+# ── OS files ────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# ── IDE ─────────────────────────────────────────────────────
+.vscode/settings.json
+.idea/
+*.iml
+
+# ── Logs ────────────────────────────────────────────────────
+logs/
+*.log
+output/audio_master.wav

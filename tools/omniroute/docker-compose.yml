@@ -1,0 +1,14 @@
+services:
+  omniroute:
+    image: diegosouzapw/omniroute:latest
+    container_name: omniroute
+    restart: always
+    ports:
+      - "3000:20128"
+      - "20128:20128"
+    volumes:
+      # Uses relative path — works from any machine after git clone
+      - ./config:/app/config
+      - ./logs:/app/logs
+    environment:
+      - NODE_ENV=production

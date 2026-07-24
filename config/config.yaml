@@ -1,0 +1,72 @@
+# ============================================================
+# LR-Bharat-Studio — Configuration File
+# Copy this to config.yaml and fill in your settings.
+# The pipeline reads all settings from here.
+# ============================================================
+
+# ── LLM Router ──────────────────────────────────────────────
+llm:
+  # Primary: OmniRoute (your own API keys, OpenAI-compatible)
+  omniroute_url:   "http://localhost:20128/v1/chat/completions"
+  omniroute_key:   ""                           # Set via env: OMNIROUTE_API_KEY
+  model_fast:      "antigravity/gemini-3.5-flash-low"   # Agents 1,2,3,6
+  model_pro:       "agy/gemini-3.1-pro-high"            # Agents 7 (orchestration)
+
+  # Fallback: FreeBuff (100% free, no API key needed)
+  # Install: npm install -g freebuff
+  freebuff_enabled: true
+
+# ── Audio Engine (Chatterbox v3) ─────────────────────────────
+audio:
+  chatterbox_device:    "cuda"    # "cuda" (ROCm/NVIDIA) or "cpu"
+  sample_rate:          24000
+  wind_volume:          0.16      # 60s organic wind bed volume
+  music_volume:         0.05      # Background music bed volume
+  wind_flow_cycle_sec:  60.0      # Wind LFO wave cycle length
+  allow_chimes:         false     # Never add blanket bell chimes
+
+# ── Image Pipeline (Option C) ────────────────────────────────
+image:
+  # Step A: FLUX.1 hero character reference (1 per character)
+  flux_model:           "black-forest-labs/FLUX.1-schnell"
+  flux_steps:           4
+  flux_guidance:        3.5
+
+  # Step B: DreamShaperXL Lightning + IP-Adapter batch scenes
+  sdxl_model:           "Lykon/DreamShaperXL_Lightning"
+  sdxl_steps:           6
+  ip_adapter_weight:    0.62      # 0.55-0.68 for best character lock
+
+  # Step C: 4K Upscaling
+  upscaler:             "realesrgan"   # "realesrgan" or "tiled"
+  upscale_factor:       2.0
+
+# ── Output Formats ───────────────────────────────────────────
+output:
+  # YouTube Long-Form (16:9)
+  longform:
+    base_w:    1920
+    base_h:    1080
+    final_w:   3840
+    final_h:   2160
+    fps:       30
+
+  # YouTube Shorts (9:16)
+  shorts:
+    base_w:    1080
+    base_h:    1920
+    final_w:   2160
+    final_h:   3840
+    fps:       30
+
+# ── Paths ────────────────────────────────────────────────────
+paths:
+  voice_registry:   "./core/voice_registry"
+  music_library:    "./core/music_library"
+  sfx_library:      "./core/sfx_library"
+  reference_voices: "./core/voice_registry"   # pulled from chatterbox_v3
+  output_audio:     "./output/audio"
+  output_images:    "./output/images"
+  output_video:     "./output/video"
+  output_qa:        "./output/qa_reports"
+  output_plans:     "./output/plans"
