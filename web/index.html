@@ -925,9 +925,11 @@
       const combosList = document.getElementById('combosList');
 
       let optionsHtml = "";
+      let firstLiveGeminiCombo = null;
 
       // Add Gemini Combos
       if(d.gemini_combos && d.gemini_combos.length > 0){
+        firstLiveGeminiCombo = d.gemini_combos[0].id;
         d.gemini_combos.forEach(c => {
           optionsHtml += `<option value="${c.id}">Gemini: ${c.id}</option>`;
         });
@@ -941,6 +943,7 @@
       }
 
       optionsHtml += `
+        <option value="auto/gemini">Combo: auto/gemini</option>
         <option value="auto/claude/opus">Combo: auto/claude/opus</option>
         <option value="auto/claude">Combo: auto/claude</option>
         <option value="antigravity/gemini-3.5-flash-low">Gemini 3.5 Flash Low</option>
@@ -949,6 +952,18 @@
       `;
 
       datalist.innerHTML = optionsHtml;
+
+      // Auto-set inputs to first live Gemini combo if available!
+      if(firstLiveGeminiCombo){
+        pipelineComboInput.value = firstLiveGeminiCombo;
+        chatComboInput.value = firstLiveGeminiCombo;
+      } else {
+        pipelineComboInput.value = "auto/gemini";
+        chatComboInput.value = "auto/gemini";
+      }
+
+      // Update right column matrix cards immediately
+      updateModelMatrix();
 
       // Update Active Combos list in right column
       let comboItemsHtml = `
@@ -967,7 +982,7 @@
       `;
 
       if(d.gemini_combos && d.gemini_combos.length > 0){
-        d.gemini_combos.slice(0, 3).forEach(c => {
+        d.gemini_combos.slice(0, 4).forEach(c => {
           comboItemsHtml += `
             <div class="combo-item">
               <span style="color:var(--orange-2)">${c.id}</span>

@@ -371,7 +371,7 @@ async def interactive_brainstorm_chat(request: Request):
     """
     data = await request.json()
     messages = data.get("messages", [])
-    primary_llm = data.get("primary_llm", "auto/claude/opus")
+    primary_llm = data.get("primary_llm", "auto/gemini")
     fallback_llm = data.get("fallback_llm", "auto/claude")
 
     system_prompt = (
@@ -388,26 +388,37 @@ async def interactive_brainstorm_chat(request: Request):
 
     full_prompt = "\n".join([f"{m['role'].capitalize()}: {m['content']}" for m in messages])
 
-    try:
-        reply_text, resolved_model, backend_used = call_llm(
-            full_prompt,
-            system_prompt=system_prompt,
-            mode=primary_llm,
-            fallback_mode=fallback_llm,
-            return_meta=True
-        )
-        return {
-            "status": "success",
-            "reply": reply_text,
-            "resolved_model": resolved_model,
-            "backend_used": backend_used
-        }
-    except Exception as e:
-        return {
-            "status": "error",
-            "reply": f"⚠️ Story Architect error: {str(e)}",
-            "resolved_model": "Fallback"
-        }
+    # Try Primary LLM first
+    modes_to_try = [primary_llm, "auto/gemini", fallback_llm, "free"]
+    # Deduplicate modes_to_try while keeping order
+    seen = set()
+    dedup_modes = [m for m in modes_to_try if not (m in seen or seen.add(m))]
+
+    last_error = None
+    for mode in dedup_modes:
+        try:
+            reply_text, resolved_model, backend_used = call_llm(
+                full_prompt,
+                system_prompt=system_prompt,
+                mode=mode,
+                fallback_mode=fallback_llm,
+                return_meta=True
+            )
+            if reply_text and not reply_text.startswith("Error:"):
+                return {
+                    "status": "success",
+                    "reply": reply_text,
+                    "resolved_model": resolved_model,
+                    "backend_used": backend_used
+                }
+        except Exception as e:
+            last_error = str(e)
+
+    return {
+        "status": "error",
+        "reply": f"⚠️ Story Architect error: {last_error or 'All LLM backends failed'}",
+        "resolved_model": "Fallback"
+    }
 
 
 @app.get("/api/pipeline/stream")
