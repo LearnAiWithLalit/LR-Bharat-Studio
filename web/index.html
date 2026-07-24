@@ -925,41 +925,32 @@
       const combosList = document.getElementById('combosList');
 
       let optionsHtml = "";
-      let firstLiveGeminiCombo = null;
+      let firstLiveCombo = null;
 
-      // Add Gemini Combos
-      if(d.gemini_combos && d.gemini_combos.length > 0){
-        firstLiveGeminiCombo = d.gemini_combos[0].id;
-        d.gemini_combos.forEach(c => {
-          optionsHtml += `<option value="${c.id}">Gemini: ${c.id}</option>`;
-        });
-      }
-
-      // Add User Combos
+      // Add Real User Combos
       if(d.user_combos && d.user_combos.length > 0){
+        firstLiveCombo = d.user_combos[0].id;
         d.user_combos.forEach(c => {
           optionsHtml += `<option value="${c.id}">Combo: ${c.id}</option>`;
         });
       }
 
-      optionsHtml += `
-        <option value="auto/gemini">Combo: auto/gemini</option>
-        <option value="auto/claude/opus">Combo: auto/claude/opus</option>
-        <option value="auto/claude">Combo: auto/claude</option>
-        <option value="antigravity/gemini-3.5-flash-low">Gemini 3.5 Flash Low</option>
-        <option value="agy/gemini-3.1-pro-high">Gemini 3.1 Pro High</option>
-        <option value="free">FreeBuff (100% Free)</option>
-      `;
+      // Add Connected Gemini / Provider Models
+      if(d.gemini_combos && d.gemini_combos.length > 0){
+        if(!firstLiveCombo) firstLiveCombo = d.gemini_combos[0].id;
+        d.gemini_combos.forEach(c => {
+          optionsHtml += `<option value="${c.id}">Model: ${c.id}</option>`;
+        });
+      }
+
+      optionsHtml += `<option value="free">FreeBuff (100% Free Fallback)</option>`;
 
       datalist.innerHTML = optionsHtml;
 
-      // Auto-set inputs to first live Gemini combo if available!
-      if(firstLiveGeminiCombo){
-        pipelineComboInput.value = firstLiveGeminiCombo;
-        chatComboInput.value = firstLiveGeminiCombo;
-      } else {
-        pipelineComboInput.value = "auto/gemini";
-        chatComboInput.value = "auto/gemini";
+      // Auto-set inputs to first genuine live combo/model if available!
+      if(firstLiveCombo){
+        pipelineComboInput.value = firstLiveCombo;
+        chatComboInput.value = firstLiveCombo;
       }
 
       // Update right column matrix cards immediately

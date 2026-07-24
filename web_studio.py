@@ -195,16 +195,11 @@ def get_gpu_info() -> dict:
 def get_omniroute_models():
     """
     Fetches live models & user-created Combos directly from OmniRoute (http://localhost:20128/v1/models).
+    Returns ONLY genuine user combos and connected provider models.
     """
     url = "http://localhost:20128/v1/models"
     user_combos = []
     gemini_combos = []
-    recommended_models = [
-        {"id": "antigravity/gemini-3.5-flash-low", "name": "Gemini 3.5 Flash (Fast Recommended)", "type": "recommended"},
-        {"id": "agy/gemini-3.1-pro-high", "name": "Gemini 3.1 Pro (High Quality)", "type": "recommended"},
-        {"id": "auto/claude/opus", "name": "Combo: auto/claude/opus", "type": "combo"},
-        {"id": "auto/claude", "name": "Combo: auto/claude", "type": "combo"},
-    ]
 
     try:
         req = urllib.request.Request(url, headers={"Authorization": f"Bearer {OMNIROUTE_KEY}"})
@@ -214,19 +209,16 @@ def get_omniroute_models():
                 models = data.get("data", [])
                 for m in models:
                     m_id = m.get("id", "")
-                    if "gemini" in m_id.lower():
-                        gemini_combos.append({"id": m_id, "name": f"Gemini: {m_id}", "type": "gemini"})
-                    elif m_id.startswith("auto/") or m_id.startswith("my-") or "combo" in m_id.lower() or "/" in m_id:
+                    if m_id.startswith("auto/") or m_id.startswith("my-") or "combo" in m_id.lower():
                         user_combos.append({"id": m_id, "name": f"Combo: {m_id}", "type": "combo"})
-                    else:
-                        user_combos.append({"id": m_id, "name": m_id, "type": "model"})
+                    elif "gemini" in m_id.lower():
+                        gemini_combos.append({"id": m_id, "name": f"Gemini: {m_id}", "type": "gemini"})
     except Exception:
         pass
 
     return {
         "user_combos": user_combos,
         "gemini_combos": gemini_combos,
-        "recommended_models": recommended_models,
         "fallback_freebuff": {"id": "free", "name": "FreeBuff (100% Free Fallback)", "type": "free"},
     }
 
