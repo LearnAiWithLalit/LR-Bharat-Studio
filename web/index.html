@@ -15,6 +15,7 @@
     --orange:#ff7a1a;
     --orange-2:#ffb066;
     --green:#28c840;
+    --blue:#3b82f6;
     --text:#f5f1ea;
     --text-dim:#a89f8f;
     --text-faint:#6b6355;
@@ -62,23 +63,25 @@
 
   /* Main Studio Layout */
   .studio-container{
-    display:grid; grid-template-columns:420px 1fr; gap:24px;
-    max-width:1600px; margin:0 auto; padding:24px; min-height:calc(100vh - 70px);
+    display:grid; grid-template-columns:440px 1fr; gap:24px;
+    max-width:1650px; margin:0 auto; padding:24px; min-height:calc(100vh - 70px);
     position:relative; z-index:10;
   }
 
   /* Left Panel: Input & Requirements Studio */
+  .left-column{ display:flex; flex-direction:column; gap:20px; }
+
   .panel-input{
     background:var(--bg-card); border:1px solid var(--line);
-    border-radius:16px; padding:24px; display:flex; flex-direction:column; gap:20px;
-    box-shadow:0 20px 50px rgba(0,0,0,0.5); height:fit-content;
+    border-radius:16px; padding:24px; display:flex; flex-direction:column; gap:18px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.5);
   }
   .panel-title{ font-family:var(--display); font-size:17px; font-weight:600; display:flex; align-items:center; gap:8px; }
 
   .prompt-box-wrap{ display:flex; flex-direction:column; gap:8px; }
   .prompt-label{ font-size:13px; font-weight:500; color:var(--text-dim); }
   textarea.prompt-input{
-    width:100%; height:130px; background:var(--bg); border:1px solid var(--line);
+    width:100%; height:120px; background:var(--bg); border:1px solid var(--line);
     border-radius:12px; padding:14px; color:var(--text); font-family:var(--body);
     font-size:14px; line-height:1.6; resize:none; outline:none;
     transition:border-color .15s, box-shadow .15s;
@@ -105,7 +108,6 @@
     padding:10px 12px; color:var(--text); font-family:var(--body); font-size:13.5px; outline:none;
   }
   select.form-select:focus{ border-color:var(--orange); }
-
   .form-row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 
   /* Cast Selection Chips */
@@ -127,6 +129,21 @@
   }
   .btn-launch:hover{ transform:translateY(-2px); box-shadow:0 12px 35px rgba(255,122,26,0.45); }
   .btn-launch:disabled{ opacity:0.5; cursor:not-allowed; transform:none; }
+
+  /* System Configuration & Resource Box */
+  .sys-box{
+    background:var(--bg-card); border:1px solid var(--line);
+    border-radius:16px; padding:20px; display:flex; flex-direction:column; gap:14px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.4);
+  }
+  .sys-title{ font-family:var(--display); font-size:15px; font-weight:600; display:flex; justify-content:space-between; align-items:center; }
+  .sys-metric{ display:flex; flex-direction:column; gap:4px; font-family:var(--mono); font-size:12px; }
+  .sys-metric-head{ display:flex; justify-content:space-between; color:var(--text-dim); }
+  .progress-bg{ width:100%; height:8px; background:var(--bg); border:1px solid var(--line); border-radius:4px; overflow:hidden; }
+  .progress-fill{ height:100%; background:linear-gradient(90deg, var(--orange), var(--orange-2)); border-radius:4px; transition:width .4s ease; }
+  .progress-fill-blue{ height:100%; background:linear-gradient(90deg, #2563eb, #60a5fa); border-radius:4px; transition:width .4s ease; }
+  .sys-tags{ display:flex; flex-wrap:wrap; gap:6px; font-family:var(--mono); font-size:11px; margin-top:4px; }
+  .sys-tag{ background:var(--bg-card-2); border:1px solid var(--line); color:var(--text-faint); padding:3px 8px; border-radius:4px; }
 
   /* Right Workspace: Live Execution & Step Reviews */
   .panel-workspace{ display:flex; flex-direction:column; gap:20px; }
@@ -161,7 +178,7 @@
     color:var(--text-faint); font-size:12px;
   }
   .terminal-body{
-    padding:14px 18px; height:140px; overflow-y:auto; line-height:1.7;
+    padding:14px 18px; height:130px; overflow-y:auto; line-height:1.7;
     color:var(--text-dim);
   }
   .log-line{ display:flex; gap:10px; }
@@ -245,82 +262,130 @@
 <!-- Main Container -->
 <div class="studio-container">
 
-  <!-- Left Column: Input & Controls -->
-  <div class="panel-input">
-    <div class="panel-title">✍️ Describe Video Requirement</div>
+  <!-- Left Column: Input & Controls & System Stats -->
+  <div class="left-column">
 
-    <div class="prompt-box-wrap">
-      <div class="prompt-label">Your Requirement Prompt:</div>
-      <textarea id="promptInput" class="prompt-input" placeholder="e.g. Create a Hindi kids story about Chintu and Meena discovering a magical glowing tree in the forest of Sundarvan..."></textarea>
-    </div>
+    <div class="panel-input">
+      <div class="panel-title">✍️ Describe Video Requirement</div>
 
-    <!-- Live Auto Analyzer -->
-    <div class="auto-detector">
-      <div class="detector-header">
-        <span>🧠 Smart Pre-Analysis</span>
-        <span id="detectorStatus">Ready</span>
+      <div class="prompt-box-wrap">
+        <div class="prompt-label">Your Requirement Prompt:</div>
+        <textarea id="promptInput" class="prompt-input" placeholder="e.g. Create a Hindi kids story about Chintu and Meena discovering a magical glowing tree in the forest of Sundarvan..."></textarea>
       </div>
-      <div class="detector-tags" id="detectorTags">
-        <span class="tag">kids_story</span>
-        <span class="tag">Hindi</span>
-        <span class="tag">mystical_forest</span>
-      </div>
-    </div>
 
-    <!-- Controls -->
-    <div class="form-row">
+      <!-- Live Auto Analyzer -->
+      <div class="auto-detector">
+        <div class="detector-header">
+          <span>🧠 Smart Pre-Analysis</span>
+          <span id="detectorStatus">Ready</span>
+        </div>
+        <div class="detector-tags" id="detectorTags">
+          <span class="tag">kids_story</span>
+          <span class="tag">Hindi</span>
+          <span class="tag">mystical_forest</span>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="form-row">
+        <div class="form-group">
+          <div class="form-label">Language:</div>
+          <select id="langSelect" class="form-select">
+            <option value="auto">Auto-detect</option>
+            <option value="Hindi" selected>Hindi</option>
+            <option value="English">English</option>
+            <option value="Both">Both (Hinglish)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <div class="form-label">Output Format:</div>
+          <select id="formatSelect" class="form-select">
+            <option value="youtube_long_form" selected>YouTube Long (16:9 4K)</option>
+            <option value="youtube_shorts">YouTube Shorts (9:16 4K)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <div class="form-label">Target Duration:</div>
+          <select id="durationSelect" class="form-select">
+            <option value="1">1 minute (Short)</option>
+            <option value="3">3 minutes</option>
+            <option value="5" selected>5 minutes (Standard)</option>
+            <option value="10">10 minutes (Long)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <div class="form-label">LLM Engine:</div>
+          <select id="llmSelect" class="form-select">
+            <option value="fast" selected>OmniRoute (Fast)</option>
+            <option value="pro">OmniRoute (Pro)</option>
+            <option value="free">FreeBuff (100% Free)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Voice Cast Selection -->
       <div class="form-group">
-        <div class="form-label">Language:</div>
-        <select id="langSelect" class="form-select">
-          <option value="auto">Auto-detect</option>
-          <option value="Hindi" selected>Hindi</option>
-          <option value="English">English</option>
-          <option value="Both">Both (Hinglish)</option>
-        </select>
+        <div class="form-label">Available Voice Cast (Voice Registry):</div>
+        <div class="cast-chips">
+          <div class="chip selected" data-voice="kid_young_1">👦 Chintu (~5yr)</div>
+          <div class="chip selected" data-voice="kid_young_2">🧒 Pappu (~7yr)</div>
+          <div class="chip selected" data-voice="kid_elder_sister">👧 Meena (Elder Sister)</div>
+          <div class="chip selected" data-voice="narrator">🎙️ Narrator (Male)</div>
+        </div>
       </div>
-      <div class="form-group">
-        <div class="form-label">Output Format:</div>
-        <select id="formatSelect" class="form-select">
-          <option value="youtube_long_form" selected>YouTube Long (16:9 4K)</option>
-          <option value="youtube_shorts">YouTube Shorts (9:16 4K)</option>
-        </select>
+
+      <button id="btnLaunch" class="btn-launch">
+        🚀 Launch 7-Agent Pipeline
+      </button>
+    </div>
+
+    <!-- System Resources & Configuration Box -->
+    <div class="sys-box">
+      <div class="sys-title">
+        <span>⚙️ System Resources & Configuration</span>
+        <span style="font-family:var(--mono); font-size:11px; color:var(--text-faint);" id="gpuStatusTag">AMD RX 7900 XTX</span>
+      </div>
+
+      <!-- GPU VRAM -->
+      <div class="sys-metric">
+        <div class="sys-metric-head">
+          <span>🎮 GPU VRAM Utilization</span>
+          <span id="vramLabel">1.1 / 24.0 GB (4.6%)</span>
+        </div>
+        <div class="progress-bg">
+          <div class="progress-fill" id="vramBar" style="width: 4.6%;"></div>
+        </div>
+      </div>
+
+      <!-- System RAM -->
+      <div class="sys-metric">
+        <div class="sys-metric-head">
+          <span>🖥️ System RAM</span>
+          <span id="ramLabel">16.9 / 61.7 GB (27.4%)</span>
+        </div>
+        <div class="progress-bg">
+          <div class="progress-fill-blue" id="ramBar" style="width: 27.4%;"></div>
+        </div>
+      </div>
+
+      <!-- CPU & Disk -->
+      <div class="sys-metric">
+        <div class="sys-metric-head">
+          <span>⚡ CPU Load: <b id="cpuLabel" style="color:var(--text)">4.2%</b> (24 Cores)</span>
+          <span>💾 Disk Free: <b id="diskLabel" style="color:var(--text)">450 GB</b></span>
+        </div>
+      </div>
+
+      <div class="sys-tags">
+        <span class="sys-tag">PyTorch ROCm 6.2</span>
+        <span class="sys-tag">Audio 24kHz</span>
+        <span class="sys-tag">4K Upscaler Real-ESRGAN</span>
       </div>
     </div>
 
-    <div class="form-row">
-      <div class="form-group">
-        <div class="form-label">Target Duration:</div>
-        <select id="durationSelect" class="form-select">
-          <option value="1">1 minute (Short)</option>
-          <option value="3">3 minutes</option>
-          <option value="5" selected>5 minutes (Standard)</option>
-          <option value="10">10 minutes (Long)</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <div class="form-label">LLM Engine:</div>
-        <select id="llmSelect" class="form-select">
-          <option value="fast" selected>OmniRoute (Fast)</option>
-          <option value="pro">OmniRoute (Pro)</option>
-          <option value="free">FreeBuff (100% Free)</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Voice Cast Selection -->
-    <div class="form-group">
-      <div class="form-label">Available Voice Cast (Voice Registry):</div>
-      <div class="cast-chips">
-        <div class="chip selected" data-voice="kid_young_1">👦 Chintu (~5yr)</div>
-        <div class="chip selected" data-voice="kid_young_2">🧒 Pappu (~7yr)</div>
-        <div class="chip selected" data-voice="kid_elder_sister">👧 Meena (Elder Sister)</div>
-        <div class="chip selected" data-voice="narrator">🎙️ Narrator (Male)</div>
-      </div>
-    </div>
-
-    <button id="btnLaunch" class="btn-launch">
-      🚀 Launch 7-Agent Pipeline
-    </button>
   </div>
 
   <!-- Right Column: Live Pipeline & Reviews -->
@@ -440,6 +505,39 @@
   let gText = "";
   for(let i=0; i<300; i++) gText += glyphs[Math.floor(Math.random()*glyphs.length)] + " ";
   glyphEl.textContent = gText;
+
+  // Real-time System Resource Polling
+  async function updateSystemStats(){
+    try {
+      const res = await fetch('/api/system_stats');
+      const d = await res.json();
+
+      // GPU VRAM
+      if(d.gpu){
+        const g = d.gpu;
+        document.getElementById('gpuStatusTag').textContent = `${g.name} (${g.temp_c}°C)`;
+        document.getElementById('vramLabel').textContent = `${g.vram_used_gb} / ${g.vram_total_gb} GB (${g.vram_pct}%)`;
+        document.getElementById('vramBar').style.width = g.vram_pct + '%';
+      }
+
+      // RAM
+      if(d.ram){
+        const r = d.ram;
+        document.getElementById('ramLabel').textContent = `${r.used_gb} / ${r.total_gb} GB (${r.percent}%)`;
+        document.getElementById('ramBar').style.width = r.percent + '%';
+      }
+
+      // CPU & Disk
+      if(d.cpu){
+        document.getElementById('cpuLabel').textContent = d.cpu.percent + '%';
+      }
+      if(d.disk){
+        document.getElementById('diskLabel').textContent = d.disk.free_gb + ' GB free';
+      }
+    } catch(e) {}
+  }
+  setInterval(updateSystemStats, 3000);
+  updateSystemStats();
 
   // Tab switching
   const tabs = document.querySelectorAll('.tab-btn');
@@ -566,7 +664,7 @@
       if(agentNum === 1){
         const d = data.data;
         document.getElementById('topicContent').innerHTML = `
-          <h4 style="color:var(--orange-2); margin-bottom:60px;">${d.title || "Untitled"}</h4>
+          <h4 style="color:var(--orange-2); margin-bottom:10px;">${d.title || "Untitled"}</h4>
           <p><b>Hook:</b> ${d.hook || "N/A"}</p>
           <p><b>Moral:</b> ${d.moral || "N/A"}</p>
           <p><b>Setting:</b> ${d.setting_description || "N/A"}</p>
