@@ -119,6 +119,16 @@
   }
   .chip.selected{ background:rgba(255,122,26,0.2); border-color:var(--orange); color:var(--orange-2); }
 
+  /* OmniRoute Helper Card */
+  .omni-card{
+    background:var(--bg-card-2); border:1px solid var(--line); border-radius:10px;
+    padding:12px 14px; font-family:var(--mono); font-size:12px; display:flex; justify-content:space-between; align-items:center;
+  }
+  .omni-btn{
+    background:var(--orange); color:#1a0d02; border:none; padding:4px 10px;
+    border-radius:6px; font-weight:600; font-size:11px; text-decoration:none; cursor:pointer;
+  }
+
   /* Launch Button */
   .btn-launch{
     background:linear-gradient(135deg, var(--orange), #d95600);
@@ -326,6 +336,15 @@
         </div>
       </div>
 
+      <!-- OmniRoute Config Helper -->
+      <div class="omni-card">
+        <div>
+          <span style="color:var(--orange-2); font-weight:600;">🔌 OmniRoute Router</span>
+          <div style="color:var(--text-dim); font-size:11px;" id="omniStatusText">Checking Docker on :20128...</div>
+        </div>
+        <a class="omni-btn" href="http://localhost:3000" target="_blank">Setup Keys ↗</a>
+      </div>
+
       <!-- Voice Cast Selection -->
       <div class="form-group">
         <div class="form-label">Available Voice Cast (Voice Registry):</div>
@@ -505,6 +524,22 @@
   let gText = "";
   for(let i=0; i<300; i++) gText += glyphs[Math.floor(Math.random()*glyphs.length)] + " ";
   glyphEl.textContent = gText;
+
+  // Real-time OmniRoute Status Checker
+  async function checkOmniRouteStatus(){
+    try {
+      const res = await fetch('/api/omniroute_status');
+      const d = await res.json();
+      const txt = document.getElementById('omniStatusText');
+      if(d.online){
+        txt.innerHTML = `<span style="color:var(--green)">✓ Online</span> (:20128) · Keys Active`;
+      } else {
+        txt.innerHTML = `<span style="color:var(--orange)">⚠️ Offline</span> (Using FreeBuff Fallback)`;
+      }
+    } catch(e){}
+  }
+  setInterval(checkOmniRouteStatus, 5000);
+  checkOmniRouteStatus();
 
   // Real-time System Resource Polling (Universal AMD / NVIDIA / Intel / CPU)
   async function updateSystemStats(){

@@ -4,6 +4,7 @@ web_studio.py — Local Web Studio Server & Interactive Dashboard
 Serves the local web interface on http://localhost:8080.
 Features:
   - Universal Hardware Auto-Detector: Auto-fetches AMD (ROCm), NVIDIA (CUDA), Intel (XPU), & CPU info.
+  - OmniRoute Health & Config Checker (/api/omniroute_status).
   - Real-time System Resource Monitoring (GPU VRAM, System RAM, CPU Load, HIKVISION Disk).
   - SSE progress streaming & media file preview.
 """
@@ -16,6 +17,7 @@ import shutil
 import subprocess
 import sys
 import time
+import urllib.request
 from typing import AsyncGenerator
 
 import psutil
@@ -192,6 +194,27 @@ def get_gpu_info() -> dict:
     }
 
 
+@app.get("/api/omniroute_status")
+def check_omniroute_status():
+    """Checks if OmniRoute Docker container and proxy endpoint (port 20128) are online."""
+    omni_url = "http://localhost:20128/v1/models"
+    dashboard_url = "http://localhost:3000"
+    is_online = False
+    try:
+        req = urllib.request.Request(omni_url, headers={"Authorization": "Bearer sk-test"})
+        with urllib.request.urlopen(req, timeout=1.5) as resp:
+            is_online = resp.status in (200, 401, 403)
+    except Exception:
+        pass
+
+    return {
+        "online": is_online,
+        "proxy_endpoint": "http://localhost:20128/v1",
+        "dashboard_ui": dashboard_url,
+        "fallback_freebuff": True,
+    }
+
+
 @app.get("/api/voices")
 def get_voices():
     """Returns list of available reference voice clips."""
@@ -207,24 +230,20 @@ def get_voices():
 @app.get("/api/system_stats")
 def get_system_stats():
     """Returns real-time GPU VRAM, System RAM, CPU Load, and Disk stats."""
-    # System RAM
     ram = psutil.virtual_memory()
     ram_total_gb = round(ram.total / (1024**3), 1)
     ram_used_gb = round(ram.used / (1024**3), 1)
     ram_pct = ram.percent
 
-    # CPU Load & Brand
     cpu_pct = psutil.cpu_percent(interval=None)
     cpu_cores = psutil.cpu_count(logical=True)
     cpu_brand = get_cpu_brand()
 
-    # Disk Space (HIKVISION drive or project dir)
     disk = psutil.disk_usage(STUDIO_DIR)
     disk_total_gb = round(disk.total / (1024**3), 1)
     disk_free_gb = round(disk.free / (1024**3), 1)
     disk_pct = disk.percent
 
-    # Universal GPU Auto-Detection
     gpu_info = get_gpu_info()
 
     return {
