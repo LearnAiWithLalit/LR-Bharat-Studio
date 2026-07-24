@@ -80,7 +80,9 @@
   .panel-title{ font-family:var(--display); font-size:16.5px; font-weight:600; display:flex; align-items:center; gap:8px; }
 
   .prompt-box-wrap{ display:flex; flex-direction:column; gap:6px; }
-  .prompt-label{ font-size:12.5px; font-weight:500; color:var(--text-dim); }
+  .prompt-label{ font-size:12.5px; font-weight:500; color:var(--text-dim); display:flex; justify-content:space-between; }
+  .prompt-hint{ font-size:11px; color:var(--text-faint); font-family:var(--mono); }
+
   textarea.prompt-input{
     width:100%; height:110px; background:var(--bg); border:1px solid var(--line);
     border-radius:12px; padding:12px; color:var(--text); font-family:var(--body);
@@ -313,7 +315,10 @@
       <div class="panel-title">✍️ Describe Video Requirement</div>
 
       <div class="prompt-box-wrap">
-        <div class="prompt-label">Your Requirement Prompt:</div>
+        <div class="prompt-label">
+          <span>Your Requirement Prompt:</span>
+          <span class="prompt-hint">↵ Enter to Launch · Shift+↵ Newline</span>
+        </div>
         <textarea id="promptInput" class="prompt-input" placeholder="e.g. Create a Hindi kids story about Chintu and Meena discovering a magical glowing tree in the forest of Sundarvan..."></textarea>
       </div>
 
@@ -391,7 +396,7 @@
       </div>
 
       <button id="btnLaunch" class="btn-launch">
-        🚀 Launch 7-Agent Pipeline
+        🚀 Launch 7-Agent Pipeline (or press Enter)
       </button>
     </div>
 
@@ -730,6 +735,14 @@
   const detectorTags = document.getElementById('detectorTags');
   const detectorStatus = document.getElementById('detectorStatus');
   let debounceTimer;
+
+  // Handle Enter key for quick submit (Shift+Enter for newline)
+  promptInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      document.getElementById('btnLaunch').click();
+    }
+  });
 
   promptInput.addEventListener('input', () => {
     clearTimeout(debounceTimer);
