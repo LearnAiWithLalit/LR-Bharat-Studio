@@ -16,6 +16,7 @@
     --orange-2:#ffb066;
     --green:#28c840;
     --blue:#3b82f6;
+    --purple:#a855f7;
     --text:#f5f1ea;
     --text-dim:#a89f8f;
     --text-faint:#6b6355;
@@ -61,29 +62,29 @@
   .dot-orange{ width:8px; height:8px; border-radius:50%; background:var(--orange); box-shadow:0 0 8px var(--orange); animation:pulse 1s infinite; }
   @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:0.4;} }
 
-  /* Main Studio Layout */
+  /* 3-Column Studio Layout */
   .studio-container{
-    display:grid; grid-template-columns:440px 1fr; gap:24px;
-    max-width:1650px; margin:0 auto; padding:24px; min-height:calc(100vh - 70px);
+    display:grid; grid-template-columns:400px 1fr 380px; gap:20px;
+    width:100%; padding:20px 24px; min-height:calc(100vh - 70px);
     position:relative; z-index:10;
   }
 
-  /* Left Panel: Input & Requirements Studio */
+  /* Left Column: Input & Controls & System Stats */
   .left-column{ display:flex; flex-direction:column; gap:20px; }
 
   .panel-input{
     background:var(--bg-card); border:1px solid var(--line);
-    border-radius:16px; padding:24px; display:flex; flex-direction:column; gap:18px;
+    border-radius:16px; padding:22px; display:flex; flex-direction:column; gap:16px;
     box-shadow:0 20px 50px rgba(0,0,0,0.5);
   }
-  .panel-title{ font-family:var(--display); font-size:17px; font-weight:600; display:flex; align-items:center; gap:8px; }
+  .panel-title{ font-family:var(--display); font-size:16.5px; font-weight:600; display:flex; align-items:center; gap:8px; }
 
-  .prompt-box-wrap{ display:flex; flex-direction:column; gap:8px; }
-  .prompt-label{ font-size:13px; font-weight:500; color:var(--text-dim); }
+  .prompt-box-wrap{ display:flex; flex-direction:column; gap:6px; }
+  .prompt-label{ font-size:12.5px; font-weight:500; color:var(--text-dim); }
   textarea.prompt-input{
-    width:100%; height:120px; background:var(--bg); border:1px solid var(--line);
-    border-radius:12px; padding:14px; color:var(--text); font-family:var(--body);
-    font-size:14px; line-height:1.6; resize:none; outline:none;
+    width:100%; height:110px; background:var(--bg); border:1px solid var(--line);
+    border-radius:12px; padding:12px; color:var(--text); font-family:var(--body);
+    font-size:13.5px; line-height:1.55; resize:none; outline:none;
     transition:border-color .15s, box-shadow .15s;
   }
   textarea.prompt-input:focus{ border-color:var(--orange); box-shadow:0 0 12px rgba(255,122,26,0.2); }
@@ -91,30 +92,30 @@
   /* Dynamic Auto-Analyzer Badge */
   .auto-detector{
     background:var(--bg-card-2); border:1px solid var(--line); border-radius:10px;
-    padding:12px; font-family:var(--mono); font-size:12px; display:flex; flex-direction:column; gap:6px;
+    padding:10px 12px; font-family:var(--mono); font-size:12px; display:flex; flex-direction:column; gap:6px;
   }
   .detector-header{ color:var(--orange-2); font-weight:600; display:flex; justify-content:space-between; }
-  .detector-tags{ display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
+  .detector-tags{ display:flex; flex-wrap:wrap; gap:6px; margin-top:2px; }
   .tag{
     background:rgba(255,122,26,0.12); border:1px solid rgba(255,122,26,0.3);
     color:var(--orange-2); padding:3px 8px; border-radius:6px; font-size:11.5px;
   }
 
   /* Control Form Fields */
-  .form-group{ display:flex; flex-direction:column; gap:6px; }
-  .form-label{ font-size:13px; color:var(--text-dim); font-weight:500; }
+  .form-group{ display:flex; flex-direction:column; gap:5px; }
+  .form-label{ font-size:12.5px; color:var(--text-dim); font-weight:500; }
   select.form-select, input.form-input{
     background:var(--bg); border:1px solid var(--line); border-radius:8px;
-    padding:10px 12px; color:var(--text); font-family:var(--body); font-size:13.5px; outline:none;
+    padding:9px 11px; color:var(--text); font-family:var(--body); font-size:13px; outline:none;
   }
   select.form-select:focus{ border-color:var(--orange); }
-  .form-row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .form-row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 
   /* Cast Selection Chips */
   .cast-chips{ display:flex; flex-wrap:wrap; gap:6px; }
   .chip{
-    background:var(--bg); border:1px solid var(--line); padding:6px 12px;
-    border-radius:8px; font-size:12px; cursor:pointer; user-select:none;
+    background:var(--bg); border:1px solid var(--line); padding:5px 10px;
+    border-radius:8px; font-size:11.5px; cursor:pointer; user-select:none;
     transition:all .15s; display:flex; align-items:center; gap:6px;
   }
   .chip.selected{ background:rgba(255,122,26,0.2); border-color:var(--orange); color:var(--orange-2); }
@@ -122,7 +123,7 @@
   /* OmniRoute Helper Card */
   .omni-card{
     background:var(--bg-card-2); border:1px solid var(--line); border-radius:10px;
-    padding:12px 14px; font-family:var(--mono); font-size:12px; display:flex; justify-content:space-between; align-items:center;
+    padding:10px 12px; font-family:var(--mono); font-size:11.5px; display:flex; justify-content:space-between; align-items:center;
   }
   .omni-btn{
     background:var(--orange); color:#1a0d02; border:none; padding:4px 10px;
@@ -132,8 +133,8 @@
   /* Launch Button */
   .btn-launch{
     background:linear-gradient(135deg, var(--orange), #d95600);
-    color:#1a0d02; border:none; padding:15px; border-radius:12px;
-    font-family:var(--display); font-weight:700; font-size:15px;
+    color:#1a0d02; border:none; padding:14px; border-radius:12px;
+    font-family:var(--display); font-weight:700; font-size:14.5px;
     cursor:pointer; transition:transform .15s, box-shadow .15s;
     box-shadow:0 8px 25px rgba(255,122,26,0.3); display:flex; align-items:center; justify-content:center; gap:8px;
   }
@@ -143,107 +144,140 @@
   /* System Configuration & Resource Box */
   .sys-box{
     background:var(--bg-card); border:1px solid var(--line);
-    border-radius:16px; padding:20px; display:flex; flex-direction:column; gap:14px;
+    border-radius:16px; padding:18px; display:flex; flex-direction:column; gap:12px;
     box-shadow:0 10px 30px rgba(0,0,0,0.4);
   }
-  .sys-title{ font-family:var(--display); font-size:15px; font-weight:600; display:flex; justify-content:space-between; align-items:center; }
-  .sys-metric{ display:flex; flex-direction:column; gap:4px; font-family:var(--mono); font-size:12px; }
+  .sys-title{ font-family:var(--display); font-size:14.5px; font-weight:600; display:flex; justify-content:space-between; align-items:center; }
+  .sys-metric{ display:flex; flex-direction:column; gap:4px; font-family:var(--mono); font-size:11.5px; }
   .sys-metric-head{ display:flex; justify-content:space-between; color:var(--text-dim); }
-  .progress-bg{ width:100%; height:8px; background:var(--bg); border:1px solid var(--line); border-radius:4px; overflow:hidden; }
+  .progress-bg{ width:100%; height:7px; background:var(--bg); border:1px solid var(--line); border-radius:4px; overflow:hidden; }
   .progress-fill{ height:100%; background:linear-gradient(90deg, var(--orange), var(--orange-2)); border-radius:4px; transition:width .4s ease; }
   .progress-fill-blue{ height:100%; background:linear-gradient(90deg, #2563eb, #60a5fa); border-radius:4px; transition:width .4s ease; }
-  .sys-tags{ display:flex; flex-wrap:wrap; gap:6px; font-family:var(--mono); font-size:11px; margin-top:4px; }
-  .sys-tag{ background:var(--bg-card-2); border:1px solid var(--line); color:var(--text-faint); padding:3px 8px; border-radius:4px; }
+  .sys-tags{ display:flex; flex-wrap:wrap; gap:5px; font-family:var(--mono); font-size:10.5px; margin-top:2px; }
+  .sys-tag{ background:var(--bg-card-2); border:1px solid var(--line); color:var(--text-faint); padding:3px 7px; border-radius:4px; }
 
   /* Right Workspace: Live Execution & Step Reviews */
-  .panel-workspace{ display:flex; flex-direction:column; gap:20px; }
+  .panel-workspace{ display:flex; flex-direction:column; gap:18px; }
 
   /* 7-Agent Stepper Visualizer */
   .stepper-bar{
     background:var(--bg-card); border:1px solid var(--line);
-    border-radius:16px; padding:18px 24px; display:grid; grid-template-columns:repeat(7, 1fr); gap:8px;
+    border-radius:16px; padding:16px 20px; display:grid; grid-template-columns:repeat(7, 1fr); gap:6px;
   }
   .agent-step{
-    display:flex; flex-direction:column; align-items:center; gap:6px;
+    display:flex; flex-direction:column; align-items:center; gap:5px;
     text-align:center; position:relative; cursor:pointer; opacity:0.5; transition:all .2s;
   }
   .agent-step.active{ opacity:1; }
   .agent-step.running .step-icon{ border-color:var(--orange); background:rgba(255,122,26,0.2); color:var(--orange); box-shadow:0 0 15px rgba(255,122,26,0.4); animation:pulse 1s infinite; }
   .agent-step.completed .step-icon{ border-color:var(--green); background:rgba(40,200,64,0.2); color:var(--green); }
   .step-icon{
-    width:38px; height:38px; border-radius:10px; background:var(--bg-card-2);
+    width:36px; height:36px; border-radius:9px; background:var(--bg-card-2);
     border:1px solid var(--line); display:flex; align-items:center; justify-content:center;
-    font-family:var(--mono); font-weight:600; font-size:13px;
+    font-family:var(--mono); font-weight:600; font-size:12.5px;
   }
-  .step-name{ font-size:11.5px; font-weight:500; color:var(--text-dim); }
+  .step-name{ font-size:11px; font-weight:500; color:var(--text-dim); }
 
   /* Terminal Log Console */
   .terminal-box{
     background:#080706; border:1px solid var(--line); border-radius:14px;
-    overflow:hidden; font-family:var(--mono); font-size:12.5px;
+    overflow:hidden; font-family:var(--mono); font-size:12px;
   }
   .terminal-header{
     background:var(--bg-card-2); border-bottom:1px solid var(--line);
-    padding:10px 16px; display:flex; align-items:center; justify-content:space-between;
-    color:var(--text-faint); font-size:12px;
+    padding:9px 14px; display:flex; align-items:center; justify-content:space-between;
+    color:var(--text-faint); font-size:11.5px;
   }
   .terminal-body{
-    padding:14px 18px; height:130px; overflow-y:auto; line-height:1.7;
+    padding:12px 16px; height:120px; overflow-y:auto; line-height:1.65;
     color:var(--text-dim);
   }
-  .log-line{ display:flex; gap:10px; }
+  .log-line{ display:flex; gap:8px; }
   .log-line .agent-tag{ color:var(--orange-2); flex-shrink:0; }
 
   /* Workspace Review Tabs */
-  .tabs-header{ display:flex; gap:8px; border-bottom:1px solid var(--line); padding-bottom:10px; }
+  .tabs-header{ display:flex; gap:6px; border-bottom:1px solid var(--line); padding-bottom:8px; }
   .tab-btn{
     background:var(--bg-card); border:1px solid var(--line); color:var(--text-dim);
-    padding:10px 18px; border-radius:10px; font-size:13.5px; font-weight:500;
-    cursor:pointer; transition:all .15s; display:flex; align-items:center; gap:8px;
+    padding:9px 15px; border-radius:9px; font-size:13px; font-weight:500;
+    cursor:pointer; transition:all .15s; display:flex; align-items:center; gap:6px;
   }
   .tab-btn.active{ background:rgba(255,122,26,0.15); border-color:var(--orange); color:var(--orange-2); }
 
   /* Review Cards Content */
   .review-card{
     background:var(--bg-card); border:1px solid var(--line);
-    border-radius:16px; padding:24px; min-height:350px; display:none;
+    border-radius:16px; padding:22px; min-height:350px; display:none;
   }
   .review-card.active{ display:block; }
 
   /* Script Review Format */
   .dialogue-item{
     background:var(--bg); border:1px solid var(--line); border-radius:10px;
-    padding:14px; margin-bottom:10px; display:flex; flex-direction:column; gap:6px;
+    padding:12px 14px; margin-bottom:10px; display:flex; flex-direction:column; gap:5px;
   }
   .speaker-badge{
     display:inline-flex; align-items:center; gap:6px; background:rgba(255,122,26,0.15);
-    color:var(--orange-2); padding:3px 10px; border-radius:6px; font-weight:600; font-size:12px; width:fit-content;
+    color:var(--orange-2); padding:3px 9px; border-radius:6px; font-weight:600; font-size:11.5px; width:fit-content;
   }
-  .dialogue-text{ font-size:14.5px; line-height:1.5; color:var(--text); }
+  .dialogue-text{ font-size:14px; line-height:1.5; color:var(--text); }
 
   /* Audio Preview Format */
   .audio-player-wrap{
     background:var(--bg-card-2); border:1px solid var(--line); border-radius:12px;
-    padding:20px; display:flex; flex-direction:column; gap:16px; margin-bottom:20px;
+    padding:18px; display:flex; flex-direction:column; gap:14px; margin-bottom:18px;
   }
   audio{ width:100%; }
 
   /* Image Gallery Format */
-  .image-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:16px; }
+  .image-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:14px; }
   .image-card{
     background:var(--bg); border:1px solid var(--line); border-radius:12px;
     overflow:hidden; transition:transform .15s; position:relative;
   }
   .image-card:hover{ transform:scale(1.02); border-color:var(--orange); }
-  .image-card img{ width:100%; height:140px; object-fit:cover; display:block; }
-  .image-card .img-caption{ padding:8px 12px; font-size:11.5px; color:var(--text-dim); font-family:var(--mono); }
+  .image-card img{ width:100%; height:130px; object-fit:cover; display:block; }
+  .image-card .img-caption{ padding:7px 10px; font-size:11px; color:var(--text-dim); font-family:var(--mono); }
 
   /* Video Preview */
   .video-player-wrap{ background:#000; border-radius:12px; overflow:hidden; border:1px solid var(--line); }
-  video{ width:100%; max-height:480px; display:block; }
+  video{ width:100%; max-height:460px; display:block; }
 
-  @media(max-width:1100px){
+  /* Right Column: AI Models & Free API Combo Matrix Box */
+  .right-column{ display:flex; flex-direction:column; gap:18px; }
+
+  .models-box{
+    background:var(--bg-card); border:1px solid var(--line);
+    border-radius:16px; padding:20px; display:flex; flex-direction:column; gap:14px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.5);
+  }
+  .models-header{ font-family:var(--display); font-size:15.5px; font-weight:600; display:flex; justify-content:space-between; align-items:center; }
+  .cost-badge{ background:rgba(40,200,64,0.15); border:1px solid rgba(40,200,64,0.3); color:var(--green); padding:3px 8px; border-radius:6px; font-family:var(--mono); font-size:11px; font-weight:600; }
+
+  /* Agent Model Mapping Cards */
+  .agent-model-card{
+    background:var(--bg-card-2); border:1px solid var(--line); border-radius:10px;
+    padding:10px 12px; display:flex; flex-direction:column; gap:4px; font-size:12px;
+  }
+  .agent-model-title{ display:flex; justify-content:space-between; font-weight:600; color:var(--text); }
+  .agent-model-primary{ color:var(--orange-2); font-family:var(--mono); font-size:11.5px; }
+  .agent-model-fallback{ color:var(--green); font-family:var(--mono); font-size:11px; }
+
+  .free-combos-wrap{ display:flex; flex-direction:column; gap:8px; margin-top:4px; }
+  .combo-item{
+    display:flex; justify-content:space-between; align-items:center;
+    background:var(--bg); border:1px solid var(--line); padding:8px 10px;
+    border-radius:8px; font-family:var(--mono); font-size:11.5px;
+  }
+  .badge-free{ background:rgba(40,200,64,0.15); color:var(--green); padding:2px 6px; border-radius:4px; font-size:10px; }
+
+  @media(max-width:1450px){
+    .studio-container{ grid-template-columns:380px 1fr; }
+    .right-column{ grid-column:span 2; }
+  }
+  @media(max-width:900px){
     .studio-container{ grid-template-columns:1fr; }
+    .right-column{ grid-column:span 1; }
     .stepper-bar{ grid-template-columns:repeat(4, 1fr); }
   }
 </style>
@@ -269,7 +303,7 @@
   </div>
 </header>
 
-<!-- Main Container -->
+<!-- Main 3-Column Container -->
 <div class="studio-container">
 
   <!-- Left Column: Input & Controls & System Stats -->
@@ -407,7 +441,7 @@
 
   </div>
 
-  <!-- Right Column: Live Pipeline & Reviews -->
+  <!-- Middle Column: Live Pipeline & Step Reviews -->
   <div class="panel-workspace">
 
     <!-- 7-Agent Stepper -->
@@ -515,6 +549,106 @@
     </div>
 
   </div>
+
+  <!-- Right Column: AI Models & Free API Combo Matrix Box -->
+  <div class="right-column">
+    <div class="models-box">
+      <div class="models-header">
+        <span>🤖 AI Models & Agent Matrix</span>
+        <span class="cost-badge">$0.00 API Cost</span>
+      </div>
+
+      <!-- Agent 1 Model -->
+      <div class="agent-model-card">
+        <div class="agent-model-title">
+          <span>Agent 1 · Topic Planner</span>
+          <span style="color:var(--green)">$0</span>
+        </div>
+        <div class="agent-model-primary">Primary: Gemini 3.5 Flash Low</div>
+        <div class="agent-model-fallback">Fallback: MiniMax M3 (FreeBuff)</div>
+      </div>
+
+      <!-- Agent 2 Model -->
+      <div class="agent-model-card">
+        <div class="agent-model-title">
+          <span>Agent 2 · Script Writer</span>
+          <span style="color:var(--green)">$0</span>
+        </div>
+        <div class="agent-model-primary">Primary: Gemini 3.1 Pro High</div>
+        <div class="agent-model-fallback">Fallback: DeepSeek V4 Pro (FreeBuff)</div>
+      </div>
+
+      <!-- Agent 3 Engine -->
+      <div class="agent-model-card">
+        <div class="agent-model-title">
+          <span>Agent 3 · Story Config</span>
+          <span style="color:var(--blue)">Local</span>
+        </div>
+        <div class="agent-model-primary">Engine: Content Analyzer Rules</div>
+      </div>
+
+      <!-- Agent 4 Model -->
+      <div class="agent-model-card">
+        <div class="agent-model-title">
+          <span>Agent 4 · Audio & Music</span>
+          <span style="color:var(--green)">$0 Local</span>
+        </div>
+        <div class="agent-model-primary">TTS: Chatterbox (Voice Clone)</div>
+        <div class="agent-model-fallback">Music: Procedural Generator</div>
+      </div>
+
+      <!-- Agent 5 Model -->
+      <div class="agent-model-card">
+        <div class="agent-model-title">
+          <span>Agent 5 · Audio QA</span>
+          <span style="color:var(--blue)">Local</span>
+        </div>
+        <div class="agent-model-primary">Inspector: Strict VAD & RMS</div>
+      </div>
+
+      <!-- Agent 6 Model -->
+      <div class="agent-model-card">
+        <div class="agent-model-title">
+          <span>Agent 6 · 4K Image Gen</span>
+          <span style="color:var(--green)">$0 Local</span>
+        </div>
+        <div class="agent-model-primary">Hero: FLUX.1 Schnell</div>
+        <div class="agent-model-fallback">Scenes: DreamShaperXL + IP-Adapter</div>
+      </div>
+
+      <!-- Agent 7 Engine -->
+      <div class="agent-model-card">
+        <div class="agent-model-title">
+          <span>Agent 7 · Video Master</span>
+          <span style="color:var(--blue)">Local</span>
+        </div>
+        <div class="agent-model-primary">Muxer: FFmpeg 4K Encoder</div>
+      </div>
+
+      <!-- Active Free Combos Status -->
+      <div style="font-size:12px; font-weight:600; color:var(--text-dim); margin-top:6px;">Active Free API Combos:</div>
+      <div class="free-combos-wrap">
+        <div class="combo-item">
+          <span>FreeBuff CLI</span>
+          <span class="badge-free">No Key Required</span>
+        </div>
+        <div class="combo-item">
+          <span>Chatterbox Voice</span>
+          <span class="badge-free">Local GPU</span>
+        </div>
+        <div class="combo-item">
+          <span>FLUX + SDXL Lightning</span>
+          <span class="badge-free">Local GPU</span>
+        </div>
+        <div class="combo-item">
+          <span>OmniRoute Proxy</span>
+          <span style="color:var(--blue)">Port :20128</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
 </div>
 
 <script>
