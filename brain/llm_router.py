@@ -51,7 +51,7 @@ def _call_freebuff(prompt, system_prompt="", timeout=60):
     combined = f"{system_prompt}\n\n{prompt}".strip() if system_prompt else prompt
     try:
         result = subprocess.run(
-            ["npx", "freebuff", "--json", "--prompt", combined],
+            ["npx", "-y", "freebuff", "--json", "--prompt", combined],
             capture_output=True, text=True, timeout=timeout
         )
         if result.returncode == 0 and result.stdout.strip():
@@ -98,42 +98,42 @@ def call_llm(prompt, system_prompt="You are a helpful AI assistant.", mode="fast
     else:
         primary_model = mode
 
-    # 1. Try OmniRoute Primary Combo / Model
-    if mode != "free":
+    # Build prioritized fallback targets list
+    fallback_targets = [primary_model]
+    if fallback_mode and fallback_mode != primary_model:
+        fallback_targets.append(fallback_mode)
+    if "auto/gemini" not in fallback_targets:
+        fallback_targets.append("auto/gemini")
+    if "auto/best-free" not in fallback_targets:
+        fallback_targets.append("auto/best-free")
+
+    last_error = None
+    for target in fallback_targets:
+        if target == "free":
+            continue
         try:
-            content, resolved_model = _call_omniroute(messages, primary_model, temperature, max_tokens)
-            print(f"[LLM Router] ✅ OmniRoute Primary [{primary_model}] → Resolved to exact model: [{resolved_model}]")
+            content, resolved_model = _call_omniroute(messages, target, temperature, max_tokens)
+            print(f"[LLM Router] ✅ OmniRoute [{target}] → Resolved to exact model: [{resolved_model}]")
             if return_meta:
-                return content, resolved_model, f"OmniRoute ({primary_model})"
+                return content, resolved_model, f"OmniRoute ({target})"
             return content
         except Exception as e:
-            print(f"[LLM Router] ⚠️  OmniRoute Primary [{primary_model}] failed ({e}).")
+            last_error = str(e)
+            print(f"[LLM Router] ⚠️  OmniRoute [{target}] failed ({e}). Trying next fallback...")
 
-    # 2. Try OmniRoute Secondary Fallback Combo / Model if specified
-    if fallback_mode and fallback_mode not in (mode, "free"):
-        fallback_target = OMNIROUTE_MODEL_FAST if fallback_mode == "fast" else \
-                         OMNIROUTE_MODEL_PRO if fallback_mode == "pro" else fallback_mode
-        try:
-            content, resolved_model = _call_omniroute(messages, fallback_target, temperature, max_tokens)
-            print(f"[LLM Router] ✅ OmniRoute Fallback [{fallback_target}] → Resolved to exact model: [{resolved_model}]")
-            if return_meta:
-                return content, resolved_model, f"OmniRoute Fallback ({fallback_target})"
-            return content
-        except Exception as e:
-            print(f"[LLM Router] ⚠️  OmniRoute Fallback [{fallback_target}] also failed ({e}).")
-
-    # 3. Fallback: FreeBuff (100% free, no API key)
+    # Final Fallback: FreeBuff CLI
     try:
         content, resolved_model = _call_freebuff(prompt, system_prompt)
-        if content and "freebuff_not_installed" not in content:
+        if content and "freebuff_not_installed" not in content and "error" not in content.lower():
             print(f"[LLM Router] ✅ FreeBuff (free fallback) → Resolved model: [{resolved_model}]")
             if return_meta:
                 return content, resolved_model, "FreeBuff (Free Fallback)"
             return content
     except Exception as e:
-        print(f"[LLM Router] ❌ FreeBuff also failed: {e}")
+        last_error = str(e)
 
-    raise RuntimeError(f"All LLM backends failed (Primary: {primary_model}, Fallback: {fallback_mode}). Check OmniRoute (localhost:20128) or install FreeBuff.")
+    raise RuntimeError(f"All LLM backends failed (Primary: {primary_model}, Fallback: {fallback_mode}). Error: {last_error}. Please ensure OmniRoute Docker is running on http://localhost:20128.")
+
 
 if __name__ == "__main__":
     print("Testing LLM Router with Model Meta return...")
