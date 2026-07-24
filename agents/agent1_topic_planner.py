@@ -9,7 +9,7 @@ import json
 import os
 import re
 import sys
-from omniroute_client import call_omniroute, DEFAULT_MODEL_FAST
+import sys, os; sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))); from brain.llm_router import call_llm
 
 def generate_topic_plan(genre="mystical_forest", language="Hindi", format_type="youtube_long_form", target_duration_min=4.5):
     print(f"\n=================================================================")
@@ -39,7 +39,7 @@ Output format MUST be valid JSON:
 
 Respond ONLY with valid JSON."""
 
-    res_raw = call_omniroute(user_prompt, system_prompt=system_prompt, model=DEFAULT_MODEL_FAST, temperature=0.3, max_tokens=2048)
+    res_raw = call_llm(user_prompt, system_prompt=system_prompt, temperature=0.3, max_tokens=2048)
     
     match = re.search(r'\{.*\}', res_raw, re.DOTALL)
     if not match:

@@ -9,7 +9,7 @@ import json
 import os
 import re
 import sys
-from omniroute_client import call_omniroute, DEFAULT_MODEL_FAST
+import sys, os; sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))); from brain.llm_router import call_llm
 
 def write_story_script():
     print(f"\n=================================================================")
@@ -44,7 +44,7 @@ RULES:
 
 Respond ONLY with complete valid JSON array."""
 
-    res_raw = call_omniroute(user_prompt, system_prompt=system_prompt, model=DEFAULT_MODEL_FAST, temperature=0.3, max_tokens=8192)
+    res_raw = call_llm(user_prompt, system_prompt=system_prompt, temperature=0.3, max_tokens=8192)
     
     # Clean output
     res_str = res_raw.strip()
