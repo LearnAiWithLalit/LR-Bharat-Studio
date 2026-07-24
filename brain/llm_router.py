@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """
-brain/llm_router.py — Smart Free LLM Router
+brain/llm_router.py — Smart LLM & Combo Router
 Priority chain:
-  1. OmniRoute (localhost:20128) — uses your own API keys (best quality)
+  1. OmniRoute (localhost:20128) — routes to user-configured Combos (e.g. auto/claude, auto/claude/opus) or provider models
   2. FreeBuff CLI   — 100% free, no API key needed (fallback brain)
-  3. FreeBuff Web API — free REST endpoint (second fallback)
 
-Agents call call_llm() and never need to know which backend is serving them.
+Agents call call_llm() with mode="fast", mode="pro", or a custom Combo model name (e.g. "auto/claude").
 """
 import json
 import os
@@ -72,8 +71,6 @@ def _call_freebuff(prompt, system_prompt="", timeout=60):
     with tempfile.NamedTemporaryFile(mode="w", suffix=".js", delete=False) as f:
         f.write(f"""
 const {{ execSync }} = require('child_process');
-// Freebuff is not directly callable via node without the CLI installed.
-// This is a placeholder — install freebuff: npm install -g freebuff
 process.stdout.write(JSON.stringify({{error: "freebuff_not_installed"}}));
 """)
         tmp = f.name
@@ -86,25 +83,34 @@ process.stdout.write(JSON.stringify({{error: "freebuff_not_installed"}}));
 def call_llm(prompt, system_prompt="You are a helpful AI assistant.", mode="fast",
              temperature=0.3, max_tokens=4096):
     """
-    Public API for all agents. Tries OmniRoute → FreeBuff.
-    mode: "fast"  — uses cheap/fast model (Agent 1, 2, 3, 6)
-          "pro"   — uses smarter model   (Agent 7, story writing)
-          "free"  — forces FreeBuff (no OmniRoute needed)
+    Public API for all agents.
+    mode can be:
+      - "fast" : uses OMNIROUTE_MODEL_FAST (antigravity/gemini-3.5-flash-low)
+      - "pro"  : uses OMNIROUTE_MODEL_PRO (agy/gemini-3.1-pro-high)
+      - "free" : forces FreeBuff fallback (100% Free, no API key)
+      - Any custom Combo or Model ID string (e.g., "auto/claude", "auto/claude/opus", "Image_Model")
     """
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user",   "content": prompt},
     ]
-    model = OMNIROUTE_MODEL_PRO if mode == "pro" else OMNIROUTE_MODEL_FAST
 
-    # Try OmniRoute first
+    # Resolve target model
+    if mode == "fast":
+        target_model = OMNIROUTE_MODEL_FAST
+    elif mode == "pro":
+        target_model = OMNIROUTE_MODEL_PRO
+    else:
+        target_model = mode
+
+    # Try OmniRoute first if not explicitly forced to 'free'
     if mode != "free":
         try:
-            response = _call_omniroute(messages, model, temperature, max_tokens)
-            print(f"[LLM Router] ✅ OmniRoute [{model}] responded.")
+            response = _call_omniroute(messages, target_model, temperature, max_tokens)
+            print(f"[LLM Router] ✅ OmniRoute [{target_model}] responded.")
             return response
         except Exception as e:
-            print(f"[LLM Router] ⚠️  OmniRoute failed ({e}). Falling back to FreeBuff...")
+            print(f"[LLM Router] ⚠️  OmniRoute [{target_model}] failed ({e}). Falling back to FreeBuff...")
 
     # Fallback: FreeBuff (100% free, no API key)
     try:
@@ -118,6 +124,6 @@ def call_llm(prompt, system_prompt="You are a helpful AI assistant.", mode="fast
     raise RuntimeError("All LLM backends failed. Check OmniRoute (localhost:20128) or install FreeBuff: npm install -g freebuff")
 
 if __name__ == "__main__":
-    print("Testing LLM Router...")
-    resp = call_llm('Respond with JSON: {"status": "ok", "router": "working"}')
+    print("Testing LLM Router with custom Combo model string...")
+    resp = call_llm('Respond with JSON: {"status": "ok", "router": "working"}', mode="auto/claude")
     print("Response:", resp)

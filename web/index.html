@@ -366,11 +366,13 @@
           </select>
         </div>
         <div class="form-group">
-          <div class="form-label">LLM Engine:</div>
+          <div class="form-label">LLM Engine / OmniRoute Combo:</div>
           <select id="llmSelect" class="form-select">
-            <option value="fast" selected>OmniRoute (Fast)</option>
+            <option value="fast" selected>OmniRoute (Fast Recommended)</option>
             <option value="pro">OmniRoute (Pro)</option>
-            <option value="free">FreeBuff (100% Free)</option>
+            <option value="auto/claude">OmniRoute Combo: auto/claude</option>
+            <option value="auto/claude/opus">OmniRoute Combo: auto/claude/opus</option>
+            <option value="free">FreeBuff (100% Free Fallback)</option>
           </select>
         </div>
       </div>
@@ -560,7 +562,7 @@
     <div class="models-box">
       <div class="models-header">
         <span>🤖 AI Models & Agent Matrix</span>
-        <span class="cost-badge">$0.00 API Cost</span>
+        <span class="cost-badge" id="matrixCostBadge">$0.00 API Cost</span>
       </div>
 
       <!-- Agent 1 Model -->
@@ -569,7 +571,7 @@
           <span>Agent 1 · Topic Planner</span>
           <span style="color:var(--green)">$0</span>
         </div>
-        <div class="agent-model-primary">Primary: Gemini 3.5 Flash Low</div>
+        <div class="agent-model-primary" id="ag1ModelText">Primary: Gemini 3.5 Flash Low</div>
         <div class="agent-model-fallback">Fallback: MiniMax M3 (FreeBuff)</div>
       </div>
 
@@ -579,7 +581,7 @@
           <span>Agent 2 · Script Writer</span>
           <span style="color:var(--green)">$0</span>
         </div>
-        <div class="agent-model-primary">Primary: Gemini 3.1 Pro High</div>
+        <div class="agent-model-primary" id="ag2ModelText">Primary: Gemini 3.1 Pro High</div>
         <div class="agent-model-fallback">Fallback: DeepSeek V4 Pro (FreeBuff)</div>
       </div>
 
@@ -631,8 +633,8 @@
       </div>
 
       <!-- Active Free Combos Status -->
-      <div style="font-size:12px; font-weight:600; color:var(--text-dim); margin-top:6px;">Active Free API Combos:</div>
-      <div class="free-combos-wrap">
+      <div style="font-size:12px; font-weight:600; color:var(--text-dim); margin-top:6px;">Active Live Combos & Engines:</div>
+      <div class="free-combos-wrap" id="combosList">
         <div class="combo-item">
           <span>FreeBuff CLI</span>
           <span class="badge-free">No Key Required</span>
@@ -663,6 +665,84 @@
   let gText = "";
   for(let i=0; i<300; i++) gText += glyphs[Math.floor(Math.random()*glyphs.length)] + " ";
   glyphEl.textContent = gText;
+
+  // Real-time OmniRoute Live Combos Auto-Fetcher
+  async function fetchOmniRouteCombos(){
+    try {
+      const res = await fetch('/api/omniroute_models');
+      const d = await res.json();
+      const llmSelect = document.getElementById('llmSelect');
+      const combosList = document.getElementById('combosList');
+
+      let optionsHtml = `<option value="fast" selected>OmniRoute (Fast Recommended)</option>
+                         <option value="pro">OmniRoute (Pro High Quality)</option>`;
+
+      if(d.user_combos && d.user_combos.length > 0){
+        optionsHtml += `<optgroup label="✨ Your OmniRoute User Combos">`;
+        d.user_combos.forEach(c => {
+          optionsHtml += `<option value="${c.id}">Combo: ${c.id}</option>`;
+        });
+        optionsHtml += `</optgroup>`;
+      }
+
+      optionsHtml += `<optgroup label="🆓 Free Fallback">
+                        <option value="free">FreeBuff (100% Free, No Key)</option>
+                      </optgroup>`;
+
+      llmSelect.innerHTML = optionsHtml;
+
+      // Update Active Combos list
+      let comboItemsHtml = `
+        <div class="combo-item">
+          <span>FreeBuff CLI</span>
+          <span class="badge-free">No Key Required</span>
+        </div>
+        <div class="combo-item">
+          <span>Chatterbox Voice</span>
+          <span class="badge-free">Local GPU</span>
+        </div>
+        <div class="combo-item">
+          <span>FLUX + SDXL</span>
+          <span class="badge-free">Local GPU</span>
+        </div>
+      `;
+
+      if(d.user_combos && d.user_combos.length > 0){
+        d.user_combos.forEach(c => {
+          comboItemsHtml += `
+            <div class="combo-item">
+              <span style="color:var(--orange-2)">${c.id}</span>
+              <span class="badge-free" style="color:var(--orange-2); border-color:var(--orange);">Omni Combo</span>
+            </div>
+          `;
+        });
+      }
+
+      combosList.innerHTML = comboItemsHtml;
+    } catch(e){}
+  }
+  fetchOmniRouteCombos();
+
+  // Dynamic Agent Model Matrix update when user selects LLM
+  const llmSelect = document.getElementById('llmSelect');
+  llmSelect.addEventListener('change', () => {
+    const val = llmSelect.value;
+    const ag1Text = document.getElementById('ag1ModelText');
+    const ag2Text = document.getElementById('ag2ModelText');
+    if(val === 'fast'){
+      ag1Text.textContent = "Primary: Gemini 3.5 Flash Low";
+      ag2Text.textContent = "Primary: Gemini 3.1 Pro High";
+    } else if(val === 'pro'){
+      ag1Text.textContent = "Primary: Gemini 3.1 Pro High";
+      ag2Text.textContent = "Primary: Gemini 3.1 Pro High";
+    } else if(val === 'free'){
+      ag1Text.textContent = "Primary: MiniMax M3 (FreeBuff)";
+      ag2Text.textContent = "Primary: DeepSeek V4 (FreeBuff)";
+    } else {
+      ag1Text.textContent = `Combo: ${val}`;
+      ag2Text.textContent = `Combo: ${val}`;
+    }
+  });
 
   // Real-time OmniRoute Status Checker
   async function checkOmniRouteStatus(){

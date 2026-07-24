@@ -3,6 +3,7 @@
 web_studio.py — Local Web Studio Server & Interactive Dashboard
 Serves the local web interface on http://localhost:8080.
 Features:
+  - Live OmniRoute Models & Combos Auto-Fetcher (/api/omniroute_models).
   - Universal Hardware Auto-Detector: Auto-fetches AMD (ROCm), NVIDIA (CUDA), Intel (XPU), & CPU info.
   - OmniRoute Health & Config Checker (/api/omniroute_status).
   - Real-time System Resource Monitoring (GPU VRAM, System RAM, CPU Load, HIKVISION Disk).
@@ -32,7 +33,7 @@ STUDIO_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, STUDIO_DIR)
 
 from brain.content_analyzer import analyze_content
-from brain.llm_router import call_llm
+from brain.llm_router import call_llm, OMNIROUTE_KEY
 
 app = FastAPI(title="LR-Bharat-Studio Local Web Dashboard")
 
@@ -75,7 +76,6 @@ def get_gpu_info() -> dict:
     Universal GPU Auto-Detector:
     Detects AMD (rocm-smi), NVIDIA (nvidia-smi), Intel (xpu-smi), or PyTorch CUDA fallback.
     """
-    # 1. AMD ROCm
     if shutil.which("rocm-smi"):
         try:
             res = subprocess.run(
@@ -109,7 +109,6 @@ def get_gpu_info() -> dict:
         except Exception:
             pass
 
-    # 2. NVIDIA CUDA
     if shutil.which("nvidia-smi"):
         try:
             res = subprocess.run(
@@ -144,7 +143,6 @@ def get_gpu_info() -> dict:
         except Exception:
             pass
 
-    # 3. Intel Arc / Data Center GPU
     if shutil.which("xpu-smi"):
         try:
             res = subprocess.run(["xpu-smi", "health"], capture_output=True, text=True, timeout=2)
@@ -162,7 +160,6 @@ def get_gpu_info() -> dict:
         except Exception:
             pass
 
-    # 4. PyTorch fallback
     try:
         import torch
         if torch.cuda.is_available():
@@ -194,6 +191,43 @@ def get_gpu_info() -> dict:
     }
 
 
+@app.get("/api/omniroute_models")
+def get_omniroute_models():
+    """
+    Fetches live models & user-created Combos directly from OmniRoute (http://localhost:20128/v1/models).
+    """
+    url = "http://localhost:20128/v1/models"
+    user_combos = []
+    recommended_models = [
+        {"id": "antigravity/gemini-3.5-flash-low", "name": "Gemini 3.5 Flash (Fast Recommended)", "type": "recommended"},
+        {"id": "agy/gemini-3.1-pro-high", "name": "Gemini 3.1 Pro (High Quality)", "type": "recommended"},
+    ]
+
+    try:
+        req = urllib.request.Request(url, headers={"Authorization": f"Bearer {OMNIROUTE_KEY}"})
+        with urllib.request.urlopen(req, timeout=2.0) as resp:
+            if resp.status == 200:
+                data = json.loads(resp.read().decode())
+                models = data.get("data", [])
+                for m in models:
+                    m_id = m.get("id", "")
+                    # Identify user-created combos or custom routes
+                    if m_id.startswith("auto/") or m_id.startswith("my-") or "_" in m_id:
+                        user_combos.append({"id": m_id, "name": f"Combo: {m_id}", "type": "combo"})
+                    elif m_id not in [r["id"] for r in recommended_models]:
+                        # Add provider models if available
+                        if any(k in m_id for k in ("claude", "gpt-4", "deepseek", "llama", "mistral")):
+                            user_combos.append({"id": m_id, "name": m_id, "type": "model"})
+    except Exception:
+        pass
+
+    return {
+        "user_combos": user_combos,
+        "recommended_models": recommended_models,
+        "fallback_freebuff": {"id": "free", "name": "FreeBuff (100% Free Fallback)", "type": "free"},
+    }
+
+
 @app.get("/api/omniroute_status")
 def check_omniroute_status():
     """Checks if OmniRoute Docker container and proxy endpoint (port 20128) are online."""
@@ -201,7 +235,7 @@ def check_omniroute_status():
     dashboard_url = "http://localhost:3000"
     is_online = False
     try:
-        req = urllib.request.Request(omni_url, headers={"Authorization": "Bearer sk-test"})
+        req = urllib.request.Request(omni_url, headers={"Authorization": f"Bearer {OMNIROUTE_KEY}"})
         with urllib.request.urlopen(req, timeout=1.5) as resp:
             is_online = resp.status in (200, 401, 403)
     except Exception:
@@ -321,12 +355,12 @@ async def stream_pipeline(
         yield sse("analysis_ready", {"analysis": config})
         yield sse(
             "status",
-            {"agent": 1, "status": "running", "message": "Agent 1: Planning topic & scenes..."},
+            {"agent": 1, "status": "running", "message": f"Agent 1: Planning topic with [{llm_mode}]..."},
         )
 
         # ── Step 1: Agent 1 (Topic Planner) ──────────────────────
         try:
-            yield sse("log", {"agent": 1, "text": "Formulating story concept and scene breakdown..."})
+            yield sse("log", {"agent": 1, "text": f"Formulating story concept using model/combo [{llm_mode}]..."})
             plan_prompt = (
                 f"Create a detailed {config['content_type']} video plan for: {prompt}\n"
                 f"Language: {config['language']}, Duration: {config['target_duration_min']} min\n"
@@ -360,7 +394,7 @@ async def stream_pipeline(
                 {
                     "agent": 2,
                     "status": "running",
-                    "message": "Agent 2: Writing narration script...",
+                    "message": f"Agent 2: Writing narration script with [{llm_mode}]...",
                 },
             )
         except Exception as e:
@@ -370,7 +404,7 @@ async def stream_pipeline(
 
         # ── Step 2: Agent 2 (Script Writer) ─────────────────────
         try:
-            yield sse("log", {"agent": 2, "text": "Writing dialogue script with emotional cues..."})
+            yield sse("log", {"agent": 2, "text": f"Writing dialogue script using [{llm_mode}]..."})
             script_prompt = (
                 f"Write a narration script for title: {topic_data.get('title')}\n"
                 f"Language: {config['language']}, Content: {config['content_type']}\n"
@@ -380,7 +414,7 @@ async def stream_pipeline(
             script_raw = call_llm(
                 script_prompt,
                 system_prompt="You are a professional children's story scriptwriter. Return raw JSON array only.",
-                mode="pro",
+                mode=llm_mode if llm_mode != "fast" else "pro",
             )
 
             match = re.search(r"\[\s*\{.*\}\s*\]", script_raw, re.DOTALL)
