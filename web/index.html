@@ -342,21 +342,21 @@
       </button>
     </div>
 
-    <!-- System Resources & Configuration Box -->
+    <!-- Universal Hardware Auto-Detector & System Resource Box -->
     <div class="sys-box">
       <div class="sys-title">
-        <span>⚙️ System Resources & Configuration</span>
-        <span style="font-family:var(--mono); font-size:11px; color:var(--text-faint);" id="gpuStatusTag">AMD RX 7900 XTX</span>
+        <span>⚙️ Universal Hardware & Resource Box</span>
+        <span style="font-family:var(--mono); font-size:11px; color:var(--text-faint);" id="gpuStatusTag">Auto-detecting...</span>
       </div>
 
       <!-- GPU VRAM -->
       <div class="sys-metric">
         <div class="sys-metric-head">
-          <span>🎮 GPU VRAM Utilization</span>
-          <span id="vramLabel">1.1 / 24.0 GB (4.6%)</span>
+          <span id="gpuNameHead">🎮 GPU VRAM Utilization</span>
+          <span id="vramLabel">0.0 / 0.0 GB (0%)</span>
         </div>
         <div class="progress-bg">
-          <div class="progress-fill" id="vramBar" style="width: 4.6%;"></div>
+          <div class="progress-fill" id="vramBar" style="width: 0%;"></div>
         </div>
       </div>
 
@@ -364,25 +364,25 @@
       <div class="sys-metric">
         <div class="sys-metric-head">
           <span>🖥️ System RAM</span>
-          <span id="ramLabel">16.9 / 61.7 GB (27.4%)</span>
+          <span id="ramLabel">0.0 / 0.0 GB (0%)</span>
         </div>
         <div class="progress-bg">
-          <div class="progress-fill-blue" id="ramBar" style="width: 27.4%;"></div>
+          <div class="progress-fill-blue" id="ramBar" style="width: 0%;"></div>
         </div>
       </div>
 
       <!-- CPU & Disk -->
       <div class="sys-metric">
         <div class="sys-metric-head">
-          <span>⚡ CPU Load: <b id="cpuLabel" style="color:var(--text)">4.2%</b> (24 Cores)</span>
-          <span>💾 Disk Free: <b id="diskLabel" style="color:var(--text)">450 GB</b></span>
+          <span>⚡ CPU: <b id="cpuBrandText" style="color:var(--text)">Auto-detecting CPU...</b> (<b id="cpuLabel">0%</b>)</span>
+          <span>💾 Disk: <b id="diskLabel" style="color:var(--text)">0 GB free</b></span>
         </div>
       </div>
 
       <div class="sys-tags">
-        <span class="sys-tag">PyTorch ROCm 6.2</span>
+        <span class="sys-tag" id="backendTag">Auto Backend</span>
         <span class="sys-tag">Audio 24kHz</span>
-        <span class="sys-tag">4K Upscaler Real-ESRGAN</span>
+        <span class="sys-tag">Real-ESRGAN 4K</span>
       </div>
     </div>
 
@@ -506,7 +506,7 @@
   for(let i=0; i<300; i++) gText += glyphs[Math.floor(Math.random()*glyphs.length)] + " ";
   glyphEl.textContent = gText;
 
-  // Real-time System Resource Polling
+  // Real-time System Resource Polling (Universal AMD / NVIDIA / Intel / CPU)
   async function updateSystemStats(){
     try {
       const res = await fetch('/api/system_stats');
@@ -515,9 +515,13 @@
       // GPU VRAM
       if(d.gpu){
         const g = d.gpu;
-        document.getElementById('gpuStatusTag').textContent = `${g.name} (${g.temp_c}°C)`;
+        document.getElementById('gpuStatusTag').textContent = `${g.vendor} | ${g.backend || 'GPU'}`;
+        document.getElementById('gpuNameHead').textContent = `🎮 ${g.name}`;
         document.getElementById('vramLabel').textContent = `${g.vram_used_gb} / ${g.vram_total_gb} GB (${g.vram_pct}%)`;
         document.getElementById('vramBar').style.width = g.vram_pct + '%';
+        if(g.backend){
+          document.getElementById('backendTag').textContent = g.backend;
+        }
       }
 
       // RAM
@@ -529,6 +533,8 @@
 
       // CPU & Disk
       if(d.cpu){
+        const cpuNameShort = (d.cpu.brand || "CPU").replace("(R)", "").replace("(TM)", "").split("Processor")[0].trim();
+        document.getElementById('cpuBrandText').textContent = cpuNameShort;
         document.getElementById('cpuLabel').textContent = d.cpu.percent + '%';
       }
       if(d.disk){
