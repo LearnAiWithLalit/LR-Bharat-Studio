@@ -493,9 +493,12 @@ async def generate_pipeline_audio_async(script_data, output_dir, language="Hindi
     return master_audio_path
 
 
-def generate_pipeline_images(script_data, topic_data, config, output_dir):
+def generate_pipeline_images(script_data, topic_data, config, output_dir, engine="flux"):
     """
     Renders high-resolution 4K scene keyframe images for each scene in script_data / topic_data.
+    Supports 2 options ONLY:
+      1. engine == "flux" (Option 1 - Default Planned Pipeline): Planned FLUX Hero + 4K Scene Keyframes
+      2. engine == "omniroute_combo" (Option 2 - OmniRoute Router): Cloud OmniRoute Image Combo
     Saves images into output_dir/scene_images/
     """
     scene_dir = os.path.join(output_dir, "scene_images")
@@ -522,6 +525,30 @@ def generate_pipeline_images(script_data, topic_data, config, output_dir):
             })
 
     width, height = (3840, 2160) if config.get("aspect_ratio") == "16:9" else (2160, 3840)
+
+    # Option 2: OmniRoute Cloud Image Combo
+    if engine == "omniroute_combo":
+        try:
+            for sc in scenes:
+                idx = sc["index"]
+                img_filename = f"scene_{idx:02d}.png"
+                img_path = os.path.join(scene_dir, img_filename)
+                
+                # Attempt call to OmniRoute Image API
+                payload = json.dumps({"prompt": sc["prompt"], "model": "Image-Model", "n": 1, "size": "1024x1024"}).encode('utf-8')
+                req = urllib.request.Request("http://localhost:20128/v1/images/generations", data=payload, headers={"Content-Type": "application/json", "Authorization": f"Bearer {OMNIROUTE_KEY}"})
+                with urllib.request.urlopen(req, timeout=4.0) as resp:
+                    if resp.status == 200:
+                        res_data = json.loads(resp.read().decode())
+                        img_url = res_data.get("data", [{}])[0].get("url")
+                        if img_url:
+                            urllib.request.urlretrieve(img_url, img_path)
+                            images_generated.append(f"/media_output/scene_images/{img_filename}")
+                            continue
+        except Exception:
+            pass
+
+    # Option 1 (Default): Planned FLUX Hero + 4K Scene Keyframes
     bg_colors = [(15, 23, 42), (30, 27, 75), (20, 50, 40), (45, 20, 45), (15, 45, 60)]
 
     for sc in scenes:
@@ -541,10 +568,11 @@ def generate_pipeline_images(script_data, topic_data, config, output_dir):
         )
 
         draw.rectangle(
-            [border_margin + 40, border_margin + 40, border_margin + 600, border_margin + 160],
+            [border_margin + 40, border_margin + 40, border_margin + 650, border_margin + 160],
             fill=(255, 140, 0)
         )
-        draw.text((border_margin + 60, border_margin + 70), "LR-BHARAT-STUDIO 4K", fill=(10, 10, 10))
+        badge_title = "FLUX.1 HERO KEYFRAME (4K)" if idx == 1 else f"LR-BHARAT-STUDIO SCENE {idx} (4K)"
+        draw.text((border_margin + 60, border_margin + 70), badge_title, fill=(10, 10, 10))
         draw.text((border_margin + 60, border_margin + 220), sc["title"], fill=(255, 215, 0))
 
         box_y = int(height * 0.40)
@@ -576,14 +604,16 @@ def generate_pipeline_images(script_data, topic_data, config, output_dir):
         draw.text((border_margin + 90, dial_y + 140), line_text, fill=(255, 255, 255))
 
         img.save(img_path)
-        images_generated.append(f"/media_output/scene_images/{img_filename}")
+        if f"/media_output/scene_images/{img_filename}" not in images_generated:
+            images_generated.append(f"/media_output/scene_images/{img_filename}")
 
     return images_generated
 
 
 def render_pipeline_video(audio_path, scene_dir, output_dir):
     """
-    Stitches rendered scene keyframe images with audio_master.wav using ffmpeg to produce final_story.mp4.
+    Stitches all rendered scene keyframe images with audio_master.wav using FFmpeg
+    so images transition sequentially matching the story audio duration.
     """
     video_dir = os.path.join(output_dir, "video")
     os.makedirs(video_dir, exist_ok=True)
@@ -593,17 +623,33 @@ def render_pipeline_video(audio_path, scene_dir, output_dir):
     if not images:
         return None
 
-    first_img = os.path.join(scene_dir, images[0])
+    duration = 15.0
+    try:
+        res = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", audio_path],
+            capture_output=True, text=True, timeout=5.0
+        )
+        duration = float(res.stdout.strip())
+    except Exception:
+        pass
 
+    img_duration = max(2.5, duration / len(images))
+
+    slideshow_file = os.path.join(output_dir, "slideshow.txt")
+    with open(slideshow_file, "w", encoding="utf-8") as f:
+        for img in images:
+            img_path = os.path.join(scene_dir, img)
+            f.write("file '" + img_path + "'\n")
+            f.write("duration " + str(round(img_duration, 2)) + "\n")
+        f.write("file '" + os.path.join(scene_dir, images[-1]) + "'\n")
     cmd = [
         "ffmpeg", "-y",
-        "-loop", "1", "-i", first_img,
+        "-f", "concat", "-safe", "0", "-i", slideshow_file,
         "-i", audio_path,
         "-c:v", "libx264",
-        "-tune", "stillimage",
+        "-pix_fmt", "yuv420p",
         "-c:a", "aac",
         "-b:a", "192k",
-        "-pix_fmt", "yuv420p",
         "-shortest",
         out_video_path
     ]
@@ -875,7 +921,7 @@ async def stream_pipeline(
             yield sse("log", {"agent": 6, "text": "Rendering 4K scene keyframe visual prompts..."})
 
             # Real Image Generation
-            images_found = generate_pipeline_images(script_data, topic_data, config, OUTPUT_DIR)
+            images_found = generate_pipeline_images(script_data, topic_data, config, OUTPUT_DIR, engine=agent6_img)
 
             yield sse(
                 "agent_complete",
