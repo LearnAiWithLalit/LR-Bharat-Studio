@@ -472,25 +472,31 @@
           </div>
         </div>
 
-        <!-- Searchable Chat Advisor Combo -->
+        <!-- OmniRoute Dashboard Combos (Chat Advisor) -->
         <div class="form-group">
           <div class="form-label">
             <span>💬 Chat Advisor Combo:</span>
-            <span class="form-subnote">Search or Select</span>
+            <span class="form-subnote" id="chatComboCountTag">OmniRoute Combos</span>
           </div>
           <div class="combo-input-wrap">
-            <input type="text" id="chatComboInput" class="form-input" list="omniCombosDatalist" placeholder="Search or type combo (e.g. auto/claude/opus)..." value="auto/claude/opus">
+            <select id="chatComboSelect" class="form-select" onchange="handleComboChange('chat')">
+              <option value="auto/claude/opus" selected>Loading dashboard combos...</option>
+            </select>
+            <input type="text" id="chatComboInput" class="form-input" style="display:none; margin-top:6px;" placeholder="Type custom combo (e.g. my-custom-combo)...">
           </div>
         </div>
 
-        <!-- Searchable Pipeline Primary Combo -->
+        <!-- OmniRoute Dashboard Combos (Pipeline Primary) -->
         <div class="form-group">
           <div class="form-label">
             <span>🚀 Pipeline Primary Combo (Agents 1-7):</span>
-            <span class="form-subnote">Search or Select</span>
+            <span class="form-subnote" id="pipelineComboCountTag">OmniRoute Combos</span>
           </div>
           <div class="combo-input-wrap">
-            <input type="text" id="pipelineComboInput" class="form-input" list="omniCombosDatalist" placeholder="Search or type combo..." value="antigravity/gemini-3.5-flash-low">
+            <select id="pipelineComboSelect" class="form-select" onchange="handleComboChange('pipeline')">
+              <option value="antigravity/gemini-3.5-flash-low" selected>Loading dashboard combos...</option>
+            </select>
+            <input type="text" id="pipelineComboInput" class="form-input" style="display:none; margin-top:6px;" placeholder="Type custom combo (e.g. my-custom-combo)...">
           </div>
         </div>
 
@@ -858,6 +864,31 @@
 
 <script>
 
+  // Combo Select Helpers
+  function handleComboChange(type){
+    const select = document.getElementById(type === 'chat' ? 'chatComboSelect' : 'pipelineComboSelect');
+    const input = document.getElementById(type === 'chat' ? 'chatComboInput' : 'pipelineComboInput');
+    if(select.value === 'custom'){
+      input.style.display = 'block';
+      input.focus();
+    } else {
+      input.style.display = 'none';
+      input.value = select.value;
+    }
+    updateModelMatrix();
+  }
+
+  function getComboValue(type){
+    const select = document.getElementById(type === 'chat' ? 'chatComboSelect' : 'pipelineComboSelect');
+    const input = document.getElementById(type === 'chat' ? 'chatComboInput' : 'pipelineComboInput');
+    if(!select) return input ? input.value : '';
+    if(select.value === 'custom'){
+      return input.value.trim() || select.value;
+    }
+    return select.value;
+  }
+
+
   // Screen Switcher Function
   function showScreen(num) {
     const s1 = document.getElementById('screen1');
@@ -945,7 +976,7 @@
     chatHistory.push({ role: 'user', content: text });
     promptInput.value = '';
 
-    const chatLLM = chatComboInput.value.trim() || "auto/claude/opus";
+    const chatLLM = getComboValue('chat') || "auto/claude/opus";
     const fallbackLLM = fallbackSelect.value;
 
     btnChatSend.disabled = true;
@@ -987,85 +1018,69 @@
   });
 
   // Real-time OmniRoute Live Combos Auto-Fetcher & Datalist Populator
-  async function fetchOmniRouteCombos(){
+    async function fetchOmniRouteCombos(){
     try {
       const res = await fetch('/api/omniroute_models');
       const d = await res.json();
-      const datalist = document.getElementById('omniCombosDatalist');
-      const combosList = document.getElementById('combosList');
+      
+      const chatSelect = document.getElementById('chatComboSelect');
+      const pipelineSelect = document.getElementById('pipelineComboSelect');
+      const chatInput = document.getElementById('chatComboInput');
+      const pipelineInput = document.getElementById('pipelineComboInput');
 
-      let optionsHtml = "";
+      let userCombosHtml = '<optgroup label="👑 Your OmniRoute Dashboard Combos">';
       let firstLiveCombo = null;
 
-      // Add Real User Combos
       if(d.user_combos && d.user_combos.length > 0){
         firstLiveCombo = d.user_combos[0].id;
         d.user_combos.forEach(c => {
-          optionsHtml += `<option value="${c.id}">Combo: ${c.id}</option>`;
+          userCombosHtml += `<option value="${c.id}">${c.id}</option>`;
         });
+      } else {
+        userCombosHtml += `<option value="" disabled>No custom combos found</option>`;
       }
+      userCombosHtml += '</optgroup>';
 
-      // Add Connected Gemini / Provider Models
+      let providerModelsHtml = '<optgroup label="⚡ Provider Models & Defaults">';
+      providerModelsHtml += `<option value="auto/claude/opus">auto/claude/opus</option>`;
+      providerModelsHtml += `<option value="auto/claude">auto/claude</option>`;
       if(d.gemini_combos && d.gemini_combos.length > 0){
-        if(!firstLiveCombo) firstLiveCombo = d.gemini_combos[0].id;
         d.gemini_combos.forEach(c => {
-          optionsHtml += `<option value="${c.id}">Model: ${c.id}</option>`;
+          providerModelsHtml += `<option value="${c.id}">${c.id}</option>`;
         });
       }
+      providerModelsHtml += `<option value="free">FreeBuff (100% Free)</option>`;
+      providerModelsHtml += '</optgroup>';
 
-      optionsHtml += `<option value="free">FreeBuff (100% Free Fallback)</option>`;
+      let customHtml = '<optgroup label="✏️ Custom"><option value="custom">✏️ Type Custom Combo...</option></optgroup>';
 
-      datalist.innerHTML = optionsHtml;
+      const fullHtml = userCombosHtml + providerModelsHtml + customHtml;
 
-      // Auto-set inputs to first genuine live combo/model if available!
+      if(chatSelect) chatSelect.innerHTML = fullHtml;
+      if(pipelineSelect) pipelineSelect.innerHTML = fullHtml;
+
+      // Auto-select first genuine live combo if available
       if(firstLiveCombo){
-        pipelineComboInput.value = firstLiveCombo;
-        chatComboInput.value = firstLiveCombo;
+        if(pipelineSelect) pipelineSelect.value = firstLiveCombo;
+        if(chatSelect) chatSelect.value = firstLiveCombo;
+        if(chatInput) chatInput.value = firstLiveCombo;
+        if(pipelineInput) pipelineInput.value = firstLiveCombo;
       }
 
-      // Update right column matrix cards immediately
       updateModelMatrix();
 
-      // Update Active Combos list in right column
-      let comboItemsHtml = `
-        <div class="combo-item">
-          <span>FreeBuff CLI</span>
-          <span class="badge-free">No Key Required</span>
-        </div>
-        <div class="combo-item">
-          <span>Chatterbox Voice</span>
-          <span class="badge-free">Local GPU</span>
-        </div>
-        <div class="combo-item">
-          <span>FLUX + SDXL</span>
-          <span class="badge-free">Local GPU</span>
-        </div>
-      `;
-
-      if(d.gemini_combos && d.gemini_combos.length > 0){
-        d.gemini_combos.slice(0, 4).forEach(c => {
-          comboItemsHtml += `
-            <div class="combo-item">
-              <span style="color:var(--orange-2)">${c.id}</span>
-              <span class="badge-free" style="color:var(--orange-2); border-color:var(--orange);">Gemini Combo</span>
-            </div>
-          `;
+      // Update right column matrix combos list
+      const combosList = document.getElementById('combosList');
+      if(combosList && d.user_combos && d.user_combos.length > 0){
+        let itemsHtml = '';
+        d.user_combos.forEach(c => {
+          itemsHtml += `<div class="combo-item"><span>${c.id}</span><span class="badge-free">OmniRoute Dashboard</span></div>`;
         });
+        combosList.innerHTML = itemsHtml;
       }
-
-      if(d.user_combos && d.user_combos.length > 0){
-        d.user_combos.slice(0, 4).forEach(c => {
-          comboItemsHtml += `
-            <div class="combo-item">
-              <span style="color:var(--orange-2)">${c.id}</span>
-              <span class="badge-free" style="color:var(--orange-2); border-color:var(--orange);">Omni Combo</span>
-            </div>
-          `;
-        });
-      }
-
-      combosList.innerHTML = comboItemsHtml;
-    } catch(e){}
+    } catch (e) {
+      console.warn("Could not fetch OmniRoute combos:", e);
+    }
   }
   fetchOmniRouteCombos();
 
@@ -1114,8 +1129,8 @@
   }
 
   function updateModelMatrix(){
-    const chatLlm = chatComboInput.value.trim() || "auto/claude/opus";
-    const primary = pipelineComboInput.value.trim() || "antigravity/gemini-3.5-flash-low";
+    const chatLlm = getComboValue('chat') || "auto/claude/opus";
+    const primary = getComboValue('pipeline') || "antigravity/gemini-3.5-flash-low";
     const fallback = fallbackSelect.value;
 
     document.getElementById('chatModelText').textContent = `Combo: ${chatLlm}`;
@@ -1237,7 +1252,7 @@
     const fmt = document.getElementById('formatSelect').value;
     const dur = durationInput.value.trim() || "5";
     
-    const primaryLLM = pipelineComboInput.value.trim() || "antigravity/gemini-3.5-flash-low";
+    const primaryLLM = getComboValue('pipeline') || "antigravity/gemini-3.5-flash-low";
     const fallbackLLM = fallbackSelect.value;
 
     const sseUrl = `/api/pipeline/stream?prompt=${encodeURIComponent(approvedPrompt)}&language=${lang}&format=${fmt}&duration=${encodeURIComponent(dur)}&llm_mode=${encodeURIComponent(primaryLLM)}&fallback_mode=${encodeURIComponent(fallbackLLM)}`;

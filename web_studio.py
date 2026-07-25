@@ -196,39 +196,53 @@ def get_gpu_info() -> dict:
 @app.get("/api/omniroute_models")
 def get_omniroute_models():
     """
-    Fetches live user-created Combos directly from OmniRoute (/v1/combos)
-    and connected Gemini / Provider models (/v1/models).
+    Fetches live user-created Combos directly from OmniRoute (/v1/combos & /api/combos)
+    and connected provider models (/v1/models).
     """
-    combos_url = "http://localhost:20128/v1/combos"
-    models_url = "http://localhost:20128/v1/models"
     user_combos = []
     gemini_combos = []
+    seen_ids = set()
 
-    # 1. Fetch exact user-created combos from /v1/combos
-    try:
-        req = urllib.request.Request(combos_url, headers={"Authorization": f"Bearer {OMNIROUTE_KEY}"})
-        with urllib.request.urlopen(req, timeout=2.5) as resp:
-            if resp.status == 200:
-                data = json.loads(resp.read().decode())
-                for c in data.get("data", []):
-                    c_name = c.get("name")
-                    if c_name:
-                        user_combos.append({"id": c_name, "name": f"Combo: {c_name}", "type": "user_combo"})
-    except Exception:
-        pass
+    # Try both port 20128 and 3000
+    combo_endpoints = [
+        "http://localhost:20128/v1/combos",
+        "http://localhost:3000/v1/combos",
+        "http://localhost:3000/api/combos"
+    ]
 
-    # 2. Fetch connected Gemini models from /v1/models
-    try:
-        req = urllib.request.Request(models_url, headers={"Authorization": f"Bearer {OMNIROUTE_KEY}"})
-        with urllib.request.urlopen(req, timeout=2.5) as resp:
-            if resp.status == 200:
-                data = json.loads(resp.read().decode())
-                for m in data.get("data", []):
-                    m_id = m.get("id", "")
-                    if "gemini" in m_id.lower() and not any(c["id"] == m_id for c in user_combos):
-                        gemini_combos.append({"id": m_id, "name": f"Gemini: {m_id}", "type": "gemini"})
-    except Exception:
-        pass
+    for url in combo_endpoints:
+        try:
+            req = urllib.request.Request(url, headers={"Authorization": f"Bearer {OMNIROUTE_KEY}"})
+            with urllib.request.urlopen(req, timeout=2.0) as resp:
+                if resp.status == 200:
+                    data = json.loads(resp.read().decode())
+                    items = data.get("data", []) if isinstance(data, dict) else (data if isinstance(data, list) else [])
+                    for c in items:
+                        c_name = c.get("name") if isinstance(c, dict) else str(c)
+                        if c_name and c_name not in seen_ids:
+                            seen_ids.add(c_name)
+                            user_combos.append({"id": c_name, "name": f"Combo: {c_name}", "type": "user_combo"})
+        except Exception:
+            pass
+
+    # Fetch connected models from /v1/models
+    models_endpoints = [
+        "http://localhost:20128/v1/models",
+        "http://localhost:3000/v1/models"
+    ]
+    for url in models_endpoints:
+        try:
+            req = urllib.request.Request(url, headers={"Authorization": f"Bearer {OMNIROUTE_KEY}"})
+            with urllib.request.urlopen(req, timeout=2.0) as resp:
+                if resp.status == 200:
+                    data = json.loads(resp.read().decode())
+                    for m in data.get("data", []):
+                        m_id = m.get("id", "")
+                        if m_id and m_id not in seen_ids:
+                            seen_ids.add(m_id)
+                            gemini_combos.append({"id": m_id, "name": f"Model: {m_id}", "type": "model"})
+        except Exception:
+            pass
 
     return {
         "user_combos": user_combos,
