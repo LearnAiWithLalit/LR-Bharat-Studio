@@ -490,12 +490,17 @@ async def generate_pipeline_audio_async(script_data, output_dir, language="Hindi
         except Exception:
             pass
 
-    # Concatenate speech WAVs
+    # Concatenate speech WAVs with natural 0.8s inter-scene pauses
     if temp_wavs:
+        pause_wav = os.path.join(output_dir, "pause.wav")
+        subprocess.run(["ffmpeg", "-y", "-f", "lavfi", "-i", "anullsrc=r=24000:cl=mono", "-t", "0.8", pause_wav], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
         concat_list_file = os.path.join(output_dir, "speech_concat.txt")
         with open(concat_list_file, "w", encoding="utf-8") as f:
             for w in temp_wavs:
                 f.write(f"file '{w}'\n")
+                if os.path.exists(pause_wav):
+                    f.write(f"file '{pause_wav}'\n")
 
         speech_combined = os.path.join(output_dir, "speech_combined.wav")
         subprocess.run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", concat_list_file, "-c", "copy", speech_combined], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -745,7 +750,7 @@ async def stream_pipeline(
                 f"Write a full narration script for title: '{topic_data.get('title')}'.\n"
                 f"Target duration: {target_min} minutes. Generate AT LEAST {num_scenes} dialogue scene objects.\n"
                 f"Language: {config['language']}, Characters: {config['voice_cast']}.\n"
-                f"Return JSON array of scene objects: [{'character': string, 'line': string, 'emotion': string, 'scene_prompt': string}]"
+                "Return JSON array of scene objects: [{'character': 'name', 'line': 'dialogue', 'emotion': 'warm', 'scene_prompt': 'visual prompt'}]"
             )
             ag2_mode = agent2_llm if (agent2_llm and agent2_llm != "auto") else (llm_mode if llm_mode != "fast" else "pro")
             script_raw, resolved_model_2, backend_used_2 = call_llm(
