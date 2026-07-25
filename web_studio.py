@@ -683,7 +683,7 @@ async def stream_pipeline(
             return f"event: {event_type}\ndata: {json.dumps(data_dict, ensure_ascii=False)}\n\n"
 
         target_min = float(duration) if duration and float(duration) > 0 else 5.0
-        num_scenes = max(6, int(target_min * 3))
+        num_scenes = max(8, int(target_min * 4))
         target_words = int(target_min * 130)
 
         # ── Step 0: Analyze ──────────────────────────────────────
