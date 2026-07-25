@@ -622,6 +622,10 @@ async def stream_pipeline(
     duration: float = 5.0,
     llm_mode: str = "fast",
     fallback_mode: str = "auto/claude",
+    agent1_llm: str = "auto",
+    agent2_llm: str = "auto",
+    agent4_tts: str = "chatterbox",
+    agent6_img: str = "flux",
 ):
     """
     SSE stream endpoint executing the 7-agent pipeline step-by-step with Primary & Fallback Combos & Exact Resolved Model logging.
@@ -661,10 +665,11 @@ async def stream_pipeline(
                 "Return JSON with: title, hook, moral, setting_description, key_scenes (list of strings)"
             )
             
+            ag1_mode = agent1_llm if (agent1_llm and agent1_llm != "auto") else llm_mode
             plan_raw, resolved_model, backend_used = call_llm(
                 plan_prompt,
                 system_prompt="You are an expert story planner. Always return valid raw JSON.",
-                mode=llm_mode,
+                mode=ag1_mode,
                 fallback_mode=fallback_mode,
                 return_meta=True,
             )
@@ -713,10 +718,11 @@ async def stream_pipeline(
                 "Return JSON array of scene objects: [{'character': string, 'line': string, 'emotion': string, 'scene_prompt': string}]"
             )
             
+            ag2_mode = agent2_llm if (agent2_llm and agent2_llm != "auto") else (llm_mode if llm_mode != "fast" else "pro")
             script_raw, resolved_model_2, backend_used_2 = call_llm(
                 script_prompt,
                 system_prompt="You are a professional children's story scriptwriter. Return raw JSON array only.",
-                mode=llm_mode if llm_mode != "fast" else "pro",
+                mode=ag2_mode,
                 fallback_mode=fallback_mode,
                 return_meta=True,
             )
